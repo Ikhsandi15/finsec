@@ -124,7 +124,6 @@ func (f *TwitterFetcher) Fetch(ctx context.Context, sourceName, url string, pane
 
 	entries := data.Props.PageProps.Timeline.Entries
 	var items []model.FeedItem
-	cutoff := time.Now().Add(-60 * 24 * time.Hour) // Max 60 days freshness cutoff
 
 	for _, entry := range entries {
 		tweet := entry.Content.Tweet
@@ -167,11 +166,6 @@ func (f *TwitterFetcher) Fetch(ctx context.Context, sourceName, url string, pane
 			if t, err := time.Parse("Mon Jan 02 15:04:05 -0700 2006", tweet.CreatedAt); err == nil {
 				pubTime = t
 			}
-		}
-
-		// Drop tweets older than 60 days
-		if !pubTime.IsZero() && pubTime.Before(cutoff) {
-			continue
 		}
 
 		id := model.GenerateID(link, title, sourceName)

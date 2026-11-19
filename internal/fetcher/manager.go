@@ -89,11 +89,8 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil // Don't abort other feeds
 			}
 
-			cutoff := time.Now().Add(-MaxItemAge)
-			for _, it := range items {
-				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
-					continue
-				}
+			freshItems := filterFreshItems(items)
+			for _, it := range freshItems {
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
@@ -120,11 +117,8 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil
 			}
 
-			cutoff := time.Now().Add(-MaxItemAge)
-			for _, it := range items {
-				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
-					continue
-				}
+			freshItems := filterFreshItems(items)
+			for _, it := range freshItems {
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
@@ -151,11 +145,8 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil
 			}
 
-			cutoff := time.Now().Add(-MaxItemAge)
-			for _, it := range items {
-				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
-					continue
-				}
+			freshItems := filterFreshItems(items)
+			for _, it := range freshItems {
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
@@ -170,6 +161,11 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 	}
 
 	_ = g.Wait()
+
+	// Deduplicate items per pane (exact normalized URL, normalized title, and fuzzy title matching)
+	pane1Items = DeduplicateItems(pane1Items)
+	pane2Items = DeduplicateItems(pane2Items)
+	pane3Items = DeduplicateItems(pane3Items)
 
 	// Sort each pane items by PriorityScore desc, then PublishedAt desc
 	sortItems(pane1Items)
@@ -196,4 +192,24 @@ func sortItems(items []model.FeedItem) {
 		}
 		return items[i].PriorityScore > items[j].PriorityScore
 	})
+}
+
+func filterFreshItems(items []model.FeedItem) []model.FeedItem {
+	cutoff := time.Now().Add(-MaxItemAge)
+	var fresh []model.FeedItem
+	for _, it := range items {
+		if it.PublishedAt.IsZero() || !it.PublishedAt.Before(cutoff) {
+			fresh = append(fresh, it)
+		}
+	}
+	// If all items are older than cutoff (e.g. curated watchdog/archive source like ICW),
+	// retain up to 10 latest items as fallback so data is not completely empty.
+	if len(fresh) == 0 && len(items) > 0 {
+		maxFallback := 10
+		if len(items) < maxFallback {
+			maxFallback = len(items)
+		}
+		fresh = items[:maxFallback]
+	}
+	return fresh
 }
