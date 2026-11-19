@@ -6,8 +6,8 @@
   <title>FINSEC-TERM // Threat & Macro Intelligence Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.0.1">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.0.0">
 </head>
 <body>
 
@@ -15,25 +15,29 @@
   <header class="top-header">
     <div class="brand-section">
       <div class="brand-title">
+        <span class="brand-logo">◈</span>
         <span>FINSEC-TERM</span>
-        <span class="brand-tag">WEB TERMINAL</span>
+        <span class="brand-tag">PRO INTELLIGENCE</span>
       </div>
       <div class="clock-display">
         <span id="clock-utc" class="clock-utc">UTC 00:00:00</span>
-        <span>//</span>
+        <span class="clock-sep">//</span>
         <span id="clock-wib" class="clock-wib">WIB 00:00:00</span>
       </div>
     </div>
 
+    <!-- STATS -->
     <div class="stats-bar">
       <div class="stat-pill" id="stat-total">0 ITEMS</div>
       <div class="stat-pill unread" id="stat-unread">0 UNREAD</div>
       <div class="stat-pill crit" id="stat-crit">0 CRITICAL</div>
-      <div class="stat-pill" id="sync-status">● LIVE</div>
+      <div class="stat-pill live" id="sync-status">● LIVE</div>
     </div>
 
+    <!-- CONTROLS -->
     <div class="header-controls">
       <div class="search-box">
+        <span class="search-icon">🔍</span>
         <input type="text" id="search-input" placeholder="Search CVE, keyword, source...">
         <span class="search-shortcut">/</span>
       </div>
@@ -41,7 +45,7 @@
         <span id="sort-icon">⏱️</span> <span id="sort-text">LATEST FIRST</span>
       </button>
       <button class="btn-action sync-btn" id="btn-sync" title="Shortcut: R">
-        <span>↻</span> SYNC NOW
+        <span class="btn-icon">↻</span> SYNC NOW
       </button>
       <button class="btn-action" id="btn-mark-all" title="Shortcut: M">
         <span>✓</span> MARK READ
@@ -49,48 +53,139 @@
     </div>
   </header>
 
-  <!-- 3-PANE BLOOMBERG GRID -->
-  <main class="main-grid">
+  <!-- MARKET TICKER STRIP (KOYFIN / BLOOMBERG STYLE) -->
+  <div class="market-ticker-strip">
+    <div class="ticker-group">
+      <span class="ticker-badge id-badge">INDONESIA MACRO</span>
+      <div class="ticker-item"><span class="lbl">BI RATE</span> <span class="val amber">6.00%</span></div>
+      <div class="ticker-item"><span class="lbl">USD/IDR</span> <span class="val amber">Rp 16.245</span></div>
+      <div class="ticker-item"><span class="lbl">IHSG</span> <span class="val green">7.185,4</span></div>
+      <div class="ticker-item"><span class="lbl">INFLASI YOY</span> <span class="val">2.86%</span></div>
+      <div class="ticker-item"><span class="lbl">SBN 10Y</span> <span class="val">6.82%</span></div>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-group">
+      <span class="ticker-badge global-badge">GLOBAL MACRO</span>
+      <div class="ticker-item"><span class="lbl">FED FUNDS</span> <span class="val cyan">4.75% - 5.00%</span></div>
+      <div class="ticker-item"><span class="lbl">US 10Y</span> <span class="val cyan">4.42%</span></div>
+      <div class="ticker-item"><span class="lbl">BRENT OIL</span> <span class="val">$74.20</span></div>
+      <div class="ticker-item"><span class="lbl">DXY INDEX</span> <span class="val">106.15</span></div>
+      <div class="ticker-item"><span class="lbl">BITCOIN</span> <span class="val green">$63.850</span></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS (SEGMENTED VIEW SWITCHER) -->
+  <nav class="view-nav-bar">
+    <div class="view-tabs">
+      <button class="view-tab active" data-view="grid" title="Shortcut: 0">
+        <span class="tab-icon">⊞</span> ALL 3-PANE GRID <span class="tab-hotkey">0</span>
+      </button>
+      <button class="view-tab" data-view="pane1" title="Shortcut: 1">
+        <span class="tab-icon">🛡️</span> [1] CVE & TECH RADAR <span class="tab-count" id="tab-count-1">0</span> <span class="tab-hotkey">1</span>
+      </button>
+      <button class="view-tab" data-view="pane2" title="Shortcut: 2">
+        <span class="tab-icon">🌐</span> [2] GLOBAL MACRO <span class="tab-count" id="tab-count-2">0</span> <span class="tab-hotkey">2</span>
+      </button>
+      <button class="view-tab" data-view="pane3" title="Shortcut: 3">
+        <span class="tab-icon">🇮🇩</span> [3] ID MARKET, POLITIK & CYBER <span class="tab-count" id="tab-count-3">0</span> <span class="tab-hotkey">3</span>
+      </button>
+    </div>
+    <div class="view-mode-hint">
+      <span>Tekan <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> untuk Mode Fokus Layar Penuh // <kbd>0</kbd> untuk 3-Pane Grid</span>
+    </div>
+  </nav>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="workspace-container">
     
-    <!-- PANE 1: CVE & TECH RADAR -->
-    <section class="pane-column" id="pane-1">
-      <div class="pane-header">
-        <div class="pane-title-wrap">
-          <span class="pane-num">[1]</span>
-          <span class="pane-title">CVE & STACK RADAR</span>
-          <span class="pane-count" id="count-pane1">0</span>
+    <!-- 1. GRID VIEW MODE (3 COLUMNS) -->
+    <main class="main-grid" id="view-grid">
+      <!-- PANE 1: CVE & TECH RADAR -->
+      <section class="pane-column" id="pane-1">
+        <div class="pane-header">
+          <div class="pane-title-wrap">
+            <span class="pane-num">[1]</span>
+            <span class="pane-title">CVE & STACK RADAR</span>
+            <span class="pane-count" id="count-pane1">0</span>
+          </div>
+          <button class="btn-focus-pane" data-target="pane1" title="Fokus ke Pane Ini">⛶ FOKUS</button>
+        </div>
+        <div class="feed-list" id="list-pane1"></div>
+      </section>
+
+      <!-- PANE 2: GLOBAL MACRO & GEOPOLITICS -->
+      <section class="pane-column" id="pane-2">
+        <div class="pane-header">
+          <div class="pane-title-wrap">
+            <span class="pane-num">[2]</span>
+            <span class="pane-title">GLOBAL MACRO & GEOPOLITICS</span>
+            <span class="pane-count" id="count-pane2">0</span>
+          </div>
+          <button class="btn-focus-pane" data-target="pane2" title="Fokus ke Pane Ini">⛶ FOKUS</button>
+        </div>
+        <div class="feed-list" id="list-pane2"></div>
+      </section>
+
+      <!-- PANE 3: INDONESIA MARKET, POLITICS & CYBER -->
+      <section class="pane-column" id="pane-3">
+        <div class="pane-header">
+          <div class="pane-title-wrap">
+            <span class="pane-num">[3]</span>
+            <span class="pane-title">ID MARKET, POLITICS & CYBER</span>
+            <span class="pane-count" id="count-pane3">0</span>
+          </div>
+          <button class="btn-focus-pane" data-target="pane3" title="Fokus ke Pane Ini">⛶ FOKUS</button>
+        </div>
+        <div class="feed-list" id="list-pane3"></div>
+      </section>
+    </main>
+
+    <!-- 2. FOCUS MASTER-DETAIL SPLIT VIEW MODE (FOR TAB 1, 2, or 3) -->
+    <section class="focus-split-view" id="view-focus" style="display:none;">
+      
+      <!-- LEFT: MASTER FEED LIST -->
+      <div class="focus-master-pane">
+        <div class="focus-pane-header">
+          <div class="focus-title-wrap">
+            <span class="focus-title-badge" id="focus-pane-badge">[3] ID MARKET</span>
+            <span class="focus-title-desc" id="focus-pane-desc">Market & Macro Intelligence</span>
+          </div>
+          <div class="focus-filter-pills" id="focus-topic-pills">
+            <!-- Dynamic topic filter pills -->
+          </div>
+        </div>
+        <div class="feed-list focus-feed-list" id="focus-feed-list"></div>
+      </div>
+
+      <!-- RIGHT: DEDICATED READER & INSPECTOR PANE (PERMANENT, NEVER CLIPPED) -->
+      <div class="focus-detail-pane">
+        <div class="reader-toolbar">
+          <div class="reader-toolbar-left">
+            <span class="reader-status-pill">◈ LIVE READER</span>
+            <span class="reader-help-hint">Pilih item di kiri atau gunakan <kbd>j</kbd>/<kbd>k</kbd></span>
+          </div>
+          <div class="reader-toolbar-actions">
+            <button class="btn-action" id="reader-mark-read">✓ TANDAI DIBACA</button>
+            <a href="#" target="_blank" class="btn-open-link" id="reader-open-link">
+              BUKA SUMBER ASLI ↗
+            </a>
+          </div>
+        </div>
+
+        <div class="reader-body" id="reader-body">
+          <div class="reader-empty-state">
+            <span class="empty-icon">📰</span>
+            <h3>PILIH BERITA DARI DAFTAR DI SAMPING</h3>
+            <p>Klik salah satu berita untuk membaca ringkasan penuh, parameter metrik, kode CVE/CWE, dan analisis dampaknya.</p>
+          </div>
         </div>
       </div>
-      <div class="feed-list" id="list-pane1"></div>
+
     </section>
 
-    <!-- PANE 2: GLOBAL MACRO & GEOPOLITICS -->
-    <section class="pane-column" id="pane-2">
-      <div class="pane-header">
-        <div class="pane-title-wrap">
-          <span class="pane-num">[2]</span>
-          <span class="pane-title">GLOBAL MACRO & GEOPOLITICS</span>
-          <span class="pane-count" id="count-pane2">0</span>
-        </div>
-      </div>
-      <div class="feed-list" id="list-pane2"></div>
-    </section>
+  </div>
 
-    <!-- PANE 3: INDONESIA MARKET, POLITICS & CYBER -->
-    <section class="pane-column" id="pane-3">
-      <div class="pane-header">
-        <div class="pane-title-wrap">
-          <span class="pane-num">[3]</span>
-          <span class="pane-title">ID MARKET, POLITICS & CYBER</span>
-          <span class="pane-count" id="count-pane3">0</span>
-        </div>
-      </div>
-      <div class="feed-list" id="list-pane3"></div>
-    </section>
-
-  </main>
-
-  <!-- INSPECTOR DRAWER / SLIDE-OVER -->
+  <!-- SLIDE-OVER DRAWER (UNTUK GRID VIEW) -->
   <div class="drawer-backdrop" id="drawer-backdrop"></div>
   <aside class="inspector-drawer" id="inspector-drawer">
     <div class="drawer-header">
@@ -100,14 +195,14 @@
     <div class="drawer-content" id="drawer-content"></div>
     <div class="drawer-footer">
       <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
-        Press <strong style="color:var(--amber)">O</strong> to open link
+        Tekan <strong style="color:var(--amber)">O</strong> untuk buka link
       </span>
       <a href="#" target="_blank" class="btn-open-link" id="drawer-open-link">
-        OPEN SOURCE ARTICLE ↗
+        BUKA ARTIKEL ASLI ↗
       </a>
     </div>
   </aside>
 
-  <script src="app.js?v=1.0.1"></script>
+  <script src="app.js?v=2.0.0"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// FINSEC-TERM Web Client
+// FINSEC-TERM Web Client 2.0 (Bloomberg / Koyfin Style)
 let state = {
   pane1: [],
   pane2: [],
@@ -16,7 +16,9 @@ let state = {
   searchQuery: '',
   selectedItem: null,
   activePane: 1,
-  sortBy: 'latest', // 'latest' (newest first) or 'priority'
+  currentView: 'grid', // 'grid', 'pane1', 'pane2', 'pane3'
+  topicFilter: 'all',  // sub-topic filter in focus mode
+  sortBy: 'latest',    // 'latest' or 'priority'
 };
 
 // DOM Elements
@@ -33,6 +35,12 @@ const elBtnSort = document.getElementById('btn-sort');
 const elSortIcon = document.getElementById('sort-icon');
 const elSortText = document.getElementById('sort-text');
 
+// Views
+const elViewGrid = document.getElementById('view-grid');
+const elViewFocus = document.getElementById('view-focus');
+const elViewTabs = document.querySelectorAll('.view-tab');
+
+// Pane List Elements (Grid View)
 const elList1 = document.getElementById('list-pane1');
 const elList2 = document.getElementById('list-pane2');
 const elList3 = document.getElementById('list-pane3');
@@ -41,6 +49,20 @@ const elCount1 = document.getElementById('count-pane1');
 const elCount2 = document.getElementById('count-pane2');
 const elCount3 = document.getElementById('count-pane3');
 
+const elTabCount1 = document.getElementById('tab-count-1');
+const elTabCount2 = document.getElementById('tab-count-2');
+const elTabCount3 = document.getElementById('tab-count-3');
+
+// Focus Mode Elements
+const elFocusBadge = document.getElementById('focus-pane-badge');
+const elFocusDesc = document.getElementById('focus-pane-desc');
+const elFocusTopicPills = document.getElementById('focus-topic-pills');
+const elFocusFeedList = document.getElementById('focus-feed-list');
+const elReaderBody = document.getElementById('reader-body');
+const elReaderOpenLink = document.getElementById('reader-open-link');
+const elReaderMarkRead = document.getElementById('reader-mark-read');
+
+// Drawer Elements (Grid View modal)
 const elDrawer = document.getElementById('inspector-drawer');
 const elDrawerBackdrop = document.getElementById('drawer-backdrop');
 const elDrawerClose = document.getElementById('drawer-close');
@@ -48,9 +70,7 @@ const elDrawerContent = document.getElementById('drawer-content');
 const elDrawerOpenLink = document.getElementById('drawer-open-link');
 
 // Formatters
-function padZero(n) {
-  return n < 10 ? '0' + n : n;
-}
+function padZero(n) { return n < 10 ? '0' + n : n; }
 
 function updateClocks() {
   const now = new Date();
@@ -70,6 +90,13 @@ function updateClocks() {
 }
 setInterval(updateClocks, 1000);
 updateClocks();
+
+function parseTime(val) {
+  if (!val) return 0;
+  const d = new Date(val);
+  const t = d.getTime();
+  return isNaN(t) ? 0 : t;
+}
 
 function relativeTime(dateStr) {
   if (!dateStr) return 'recent';
@@ -101,7 +128,6 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-// Render Badge helper
 function renderBadges(badges, cves) {
   let html = '';
   if (badges && badges.length) {
@@ -124,12 +150,107 @@ function renderBadges(badges, cves) {
   return html;
 }
 
-// Render Feeds List
-function renderList(container, items, paneNum) {
+// TOPIC FILTERS CONFIGURATION
+const topicPresets = {
+  pane1: [
+    { id: 'all', label: 'SEMUA RADAR' },
+    { id: 'cisa', label: 'CISA KEV' },
+    { id: 'stack-crit', label: 'STACK-CRIT' },
+    { id: 'rce', label: 'RCE / ZERO-DAY' },
+    { id: 'nginx', label: 'NGINX' },
+    { id: 'php', label: 'PHP' },
+    { id: 'golang', label: 'GOLANG / GO' },
+    { id: 'redis', label: 'REDIS / DB' },
+  ],
+  pane2: [
+    { id: 'all', label: 'SEMUA MAKRO' },
+    { id: 'fed', label: 'THE FED / POWELL' },
+    { id: 'cpi', label: 'INFLASI / CPI' },
+    { id: 'treasury', label: 'BONDS / YIELDS' },
+    { id: 'oil', label: 'CRUDE OIL' },
+    { id: 'crypto', label: 'BITCOIN / SENTIMENT' },
+  ],
+  pane3: [
+    { id: 'all', label: 'SEMUA PASAR RI' },
+    { id: 'bi', label: 'BANK INDONESIA / BI RATE' },
+    { id: 'rupiah', label: 'RUPIAH (USD/IDR)' },
+    { id: 'ihsg', label: 'IHSG / BURSA' },
+    { id: 'sbn', label: 'SBN / OBLIGASI' },
+    { id: 'ojk', label: 'OJK / PERBANKAN' },
+    { id: 'pol', label: 'KABINET / APBN' },
+    { id: 'cyber', label: 'BSSN / CSIRT SIBER' },
+  ],
+};
+
+function matchesTopic(item, topic) {
+  if (topic === 'all') return true;
+  const text = (item.title + ' ' + (item.description || '') + ' ' + (item.source || '')).toLowerCase();
+  switch (topic) {
+    // Pane 1
+    case 'cisa': return item.is_cisa || item.source.toLowerCase().includes('cisa');
+    case 'stack-crit': return item.badges && item.badges.includes('STACK-CRIT');
+    case 'rce': return text.includes('rce') || text.includes('remote code execution') || text.includes('zero-day');
+    case 'nginx': return text.includes('nginx');
+    case 'php': return text.includes('php');
+    case 'golang': return text.includes('golang') || text.includes('go ');
+    case 'redis': return text.includes('redis') || text.includes('postgres') || text.includes('database');
+
+    // Pane 2
+    case 'fed': return text.includes('fed') || text.includes('fomc') || text.includes('powell') || text.includes('interest rate');
+    case 'cpi': return text.includes('cpi') || text.includes('pce') || text.includes('inflation') || text.includes('inflasi');
+    case 'treasury': return text.includes('treasury') || text.includes('yield') || text.includes('bond');
+    case 'oil': return text.includes('oil') || text.includes('crude') || text.includes('energy');
+    case 'crypto': return text.includes('bitcoin') || text.includes('crypto') || text.includes('coindesk');
+
+    // Pane 3
+    case 'bi': return text.includes('bank indonesia') || text.includes('bi rate') || text.includes('gubernur bi');
+    case 'rupiah': return text.includes('rupiah') || text.includes('idr') || text.includes('dolar');
+    case 'ihsg': return text.includes('ihsg') || text.includes('saham') || text.includes('bursa');
+    case 'sbn': return text.includes('sbn') || text.includes('sun') || text.includes('obligasi');
+    case 'ojk': return text.includes('ojk') || text.includes('bank') || text.includes('perbankan');
+    case 'pol': return text.includes('prabowo') || text.includes('kemenkeu') || text.includes('apbn') || text.includes('danantara') || text.includes('purbaya');
+    case 'cyber': return text.includes('bssn') || text.includes('csirt') || text.includes('siber') || text.includes('kebocoran') || text.includes('hacker');
+  }
+  return true;
+}
+
+// Apply Filtering & Sorting
+function applyFilter() {
+  const q = state.searchQuery.trim().toLowerCase();
+  const filterFn = item => {
+    if (!q) return true;
+    if (item.title && item.title.toLowerCase().includes(q)) return true;
+    if (item.description && item.description.toLowerCase().includes(q)) return true;
+    if (item.source && item.source.toLowerCase().includes(q)) return true;
+    if (item.cves && item.cves.some(c => c.toLowerCase().includes(q))) return true;
+    if (item.cwes && item.cwes.some(c => c.toLowerCase().includes(q))) return true;
+    if (item.badges && item.badges.some(b => b.toLowerCase().includes(q))) return true;
+    return false;
+  };
+
+  const sortFn = (a, b) => {
+    const timeA = parseTime(a.published_at);
+    const timeB = parseTime(b.published_at);
+    if (state.sortBy === 'latest') {
+      return timeB - timeA;
+    }
+    if (b.priority_score !== a.priority_score) {
+      return b.priority_score - a.priority_score;
+    }
+    return timeB - timeA;
+  };
+
+  state.filtered1 = state.pane1.filter(filterFn).sort(sortFn);
+  state.filtered2 = state.pane2.filter(filterFn).sort(sortFn);
+  state.filtered3 = state.pane3.filter(filterFn).sort(sortFn);
+}
+
+// Render Card List
+function renderList(container, items, paneNum, isFocusMode = false) {
   if (!items || items.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <span>No feed items available</span>
+        <span>Tidak ada berita yang cocok dengan kriteria filter</span>
       </div>
     `;
     return;
@@ -174,13 +295,15 @@ function renderList(container, items, paneNum) {
 function updateUI() {
   applyFilter();
 
-  renderList(elList1, state.filtered1, 1);
-  renderList(elList2, state.filtered2, 2);
-  renderList(elList3, state.filtered3, 3);
-
+  // Grid view counts
   elCount1.textContent = state.filtered1.length;
   elCount2.textContent = state.filtered2.length;
   elCount3.textContent = state.filtered3.length;
+
+  // Tab counts
+  elTabCount1.textContent = state.filtered1.length;
+  elTabCount2.textContent = state.filtered2.length;
+  elTabCount3.textContent = state.filtered3.length;
 
   elTotal.textContent = `${state.stats.total_items} ITEMS`;
   elUnread.textContent = `${state.stats.unread_count} UNREAD`;
@@ -193,40 +316,88 @@ function updateUI() {
     elSyncStatus.innerHTML = `<span style="color:var(--green)">●</span> LIVE`;
     elBtnSync.disabled = false;
   }
+
+  if (state.currentView === 'grid') {
+    elViewGrid.style.display = 'grid';
+    elViewFocus.style.display = 'none';
+
+    renderList(elList1, state.filtered1, 1);
+    renderList(elList2, state.filtered2, 2);
+    renderList(elList3, state.filtered3, 3);
+  } else {
+    elViewGrid.style.display = 'none';
+    elViewFocus.style.display = 'grid';
+    renderFocusMode();
+  }
 }
 
-function applyFilter() {
-  const q = state.searchQuery.trim().toLowerCase();
-  const filterFn = item => {
-    if (!q) return true;
-    if (item.title && item.title.toLowerCase().includes(q)) return true;
-    if (item.description && item.description.toLowerCase().includes(q)) return true;
-    if (item.source && item.source.toLowerCase().includes(q)) return true;
-    if (item.cves && item.cves.some(c => c.toLowerCase().includes(q))) return true;
-    if (item.cwes && item.cwes.some(c => c.toLowerCase().includes(q))) return true;
-    if (item.badges && item.badges.some(b => b.toLowerCase().includes(q))) return true;
-    return false;
-  };
+// RENDER FOCUS MASTER-DETAIL MODE
+function renderFocusMode() {
+  let targetItems = [];
+  let paneName = '';
+  let paneDesc = '';
+  let paneNum = 1;
 
-  const sortFn = (a, b) => {
-    const timeA = new Date(a.published_at || 0).getTime();
-    const timeB = new Date(b.published_at || 0).getTime();
-    if (state.sortBy === 'latest') {
-      return timeB - timeA;
-    }
-    if (b.priority_score !== a.priority_score) {
-      return b.priority_score - a.priority_score;
-    }
-    return timeB - timeA;
-  };
+  if (state.currentView === 'pane1') {
+    targetItems = state.filtered1;
+    paneName = '[1] CVE & TECH STACK RADAR';
+    paneDesc = 'Pemantauan Kerentanan CISA KEV, RCE, dan Infrastruktur Server';
+    paneNum = 1;
+  } else if (state.currentView === 'pane2') {
+    targetItems = state.filtered2;
+    paneName = '[2] GLOBAL MACRO & GEOPOLITICS';
+    paneDesc = 'Pemantauan Suku Bunga The Fed, Inflasi CPI/PCE, Treasury, Minyak & Pasar Dunia';
+    paneNum = 2;
+  } else if (state.currentView === 'pane3') {
+    targetItems = state.filtered3;
+    paneName = '[3] ID MARKET, POLITIK & CYBER';
+    paneDesc = 'Pemantauan Bank Indonesia (BI Rate), Rupiah, IHSG, SBN, OJK & Insiden Siber';
+    paneNum = 3;
+  }
 
-  state.filtered1 = state.pane1.filter(filterFn).sort(sortFn);
-  state.filtered2 = state.pane2.filter(filterFn).sort(sortFn);
-  state.filtered3 = state.pane3.filter(filterFn).sort(sortFn);
+  elFocusBadge.textContent = paneName;
+  elFocusDesc.textContent = paneDesc;
+
+  // Render Topic Pills
+  const presets = topicPresets[state.currentView] || [];
+  elFocusTopicPills.innerHTML = presets.map(p => {
+    const isActive = state.topicFilter === p.id;
+    return `<button class="topic-pill ${isActive ? 'active' : ''}" data-topic="${p.id}">${escapeHtml(p.label)}</button>`;
+  }).join('');
+
+  elFocusTopicPills.querySelectorAll('.topic-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.topicFilter = btn.getAttribute('data-topic');
+      renderFocusMode();
+    });
+  });
+
+  // Filter items by topic
+  const topicFiltered = targetItems.filter(item => matchesTopic(item, state.topicFilter));
+
+  // Render Master List
+  renderList(elFocusFeedList, topicFiltered, paneNum, true);
+
+  // If no item is selected or current selected item not in this list, select first item automatically
+  if (topicFiltered.length > 0) {
+    if (!state.selectedItem || !topicFiltered.some(it => it.id === state.selectedItem.id)) {
+      selectItem(topicFiltered[0].id, paneNum, false);
+    } else {
+      renderReaderPane(state.selectedItem);
+    }
+  } else {
+    elReaderBody.innerHTML = `
+      <div class="reader-empty-state">
+        <span class="empty-icon">📭</span>
+        <h3>TIDAK ADA BERITA</h3>
+        <p>Tidak ada berita yang cocok dengan filter topik <strong>${state.topicFilter}</strong>.</p>
+      </div>
+    `;
+  }
 }
 
-// Select Item & Open Inspector
-function selectItem(id, paneNum) {
+// Select Item
+function selectItem(id, paneNum, openDrawerInGrid = true) {
   let item = null;
   const allItems = [...state.pane1, ...state.pane2, ...state.pane3];
   item = allItems.find(it => it.id === id);
@@ -245,34 +416,97 @@ function selectItem(id, paneNum) {
     }).catch(console.error);
   }
 
-  openInspector(item);
-  updateUI();
+  if (state.currentView === 'grid') {
+    if (openDrawerInGrid) {
+      openDrawer(item);
+    }
+    updateUI();
+  } else {
+    // In focus mode, update the reader pane right away
+    renderReaderPane(item);
+    // highlight selected card in list
+    document.querySelectorAll('#focus-feed-list .feed-card').forEach(c => {
+      if (c.getAttribute('data-id') === item.id) {
+        c.classList.add('active');
+        c.classList.remove('unread');
+        c.classList.add('read');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+  }
 }
 
-function openInspector(item) {
+// RENDER DEDICATED READER PANE IN FOCUS MODE
+function renderReaderPane(item) {
+  if (!item) return;
+  const badgesHtml = renderBadges(item.badges, item.cves);
+
+  elReaderBody.innerHTML = `
+    <div class="reader-article-header">
+      <div class="badges-row" style="margin-bottom: 6px;">${badgesHtml}</div>
+      <h1 class="reader-main-title">${escapeHtml(item.title)}</h1>
+
+      <div class="reader-meta-cards">
+        <div class="reader-meta-card">
+          <span class="meta-k">SUMBER</span>
+          <span class="meta-v" style="color:var(--cyan);">${escapeHtml(item.source)}</span>
+        </div>
+        <div class="reader-meta-card">
+          <span class="meta-k">WAKTU TERBIT</span>
+          <span class="meta-v">${formatWIB(item.published_at)}</span>
+        </div>
+        <div class="reader-meta-card">
+          <span class="meta-k">SEVERITY / PRIORITAS</span>
+          <span class="meta-v" style="color:${item.severity === 'CRIT' ? 'var(--red-crit)' : 'var(--amber)'}">
+            ${escapeHtml(item.severity || 'INFO')} (Skor: ${item.priority_score})
+          </span>
+        </div>
+        ${item.cves && item.cves.length ? `
+          <div class="reader-meta-card">
+            <span class="meta-k">CVE IDENTIFIERS</span>
+            <span class="meta-v">
+              ${item.cves.map(c => `<a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(c)}" target="_blank" style="color:var(--red-crit); font-weight:700; text-decoration:none; margin-right:6px;">${escapeHtml(c)} ↗</a>`).join('')}
+            </span>
+          </div>
+        ` : ''}
+        ${item.vendor_project || item.product ? `
+          <div class="reader-meta-card">
+            <span class="meta-k">AFFECTS / VENDOR</span>
+            <span class="meta-v">${escapeHtml(item.vendor_project || '')} / ${escapeHtml(item.product || '')}</span>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <div class="reader-content-block">
+      ${escapeHtml(item.description || 'Tidak ada deskripsi extended pada feed berita ini. Silakan klik tombol "BUKA SUMBER ASLI" di kanan atas untuk membaca artikel lengkap di portal media bersangkutan.')}
+    </div>
+  `;
+
+  elReaderOpenLink.href = item.url || '#';
+}
+
+// Drawer for Grid Mode
+function openDrawer(item) {
   const badgesHtml = renderBadges(item.badges, item.cves);
 
   elDrawerContent.innerHTML = `
     <div class="inspector-main-title">${escapeHtml(item.title)}</div>
 
     <div class="meta-grid">
-      <div class="meta-label">Source:</div>
+      <div class="meta-label">Sumber:</div>
       <div class="meta-val"><strong style="color:var(--cyan)">${escapeHtml(item.source)}</strong></div>
 
-      <div class="meta-label">Published:</div>
+      <div class="meta-label">Waktu:</div>
       <div class="meta-val">${formatWIB(item.published_at)} (${relativeTime(item.published_at)})</div>
 
       <div class="meta-label">Severity:</div>
-      <div class="meta-val"><strong style="color:${item.severity === 'CRIT' ? 'var(--red-crit)' : 'var(--amber)'}">${escapeHtml(item.severity || 'INFO')}</strong> (Priority Score: ${item.priority_score})</div>
+      <div class="meta-val"><strong style="color:${item.severity === 'CRIT' ? 'var(--red-crit)' : 'var(--amber)'}">${escapeHtml(item.severity || 'INFO')}</strong> (Skor: ${item.priority_score})</div>
 
       ${item.cves && item.cves.length ? `
         <div class="meta-label">CVE IDs:</div>
         <div class="meta-val">${item.cves.map(c => `<a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(c)}" target="_blank" style="color:var(--red-crit); font-weight:700; margin-right:6px;">${escapeHtml(c)} ↗</a>`).join('')}</div>
-      ` : ''}
-
-      ${item.cwes && item.cwes.length ? `
-        <div class="meta-label">CWE IDs:</div>
-        <div class="meta-val">${escapeHtml(item.cwes.join(', '))}</div>
       ` : ''}
 
       ${badgesHtml ? `
@@ -280,16 +514,11 @@ function openInspector(item) {
         <div class="meta-val" style="display:flex; flex-wrap:wrap; gap:4px;">${badgesHtml}</div>
       ` : ''}
 
-      ${item.vendor_project || item.product ? `
-        <div class="meta-label">Affects:</div>
-        <div class="meta-val"><strong>${escapeHtml(item.vendor_project || '')}</strong> / ${escapeHtml(item.product || '')}</div>
-      ` : ''}
-
       <div class="meta-label">Target URL:</div>
       <div class="meta-val"><a href="${escapeHtml(item.url)}" target="_blank" style="color:var(--cyan); word-break:break-all;">${escapeHtml(item.url)}</a></div>
     </div>
 
-    <div class="inspector-description">${escapeHtml(item.description || 'No extended summary provided in this feed entry.')}</div>
+    <div class="inspector-description">${escapeHtml(item.description || 'Tidak ada ringkasan teks panjang.')}</div>
   `;
 
   elDrawerOpenLink.href = item.url || '#';
@@ -297,13 +526,45 @@ function openInspector(item) {
   elDrawerBackdrop.classList.add('open');
 }
 
-function closeInspector() {
+function closeDrawer() {
   elDrawer.classList.remove('open');
   elDrawerBackdrop.classList.remove('open');
 }
 
-elDrawerClose.addEventListener('click', closeInspector);
-elDrawerBackdrop.addEventListener('click', closeInspector);
+elDrawerClose.addEventListener('click', closeDrawer);
+elDrawerBackdrop.addEventListener('click', closeDrawer);
+
+// VIEW SWITCHING (Tabs)
+function switchView(targetView) {
+  state.currentView = targetView;
+  state.topicFilter = 'all';
+
+  elViewTabs.forEach(t => {
+    if (t.getAttribute('data-view') === targetView) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+
+  updateUI();
+}
+
+elViewTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const view = tab.getAttribute('data-view');
+    switchView(view);
+  });
+});
+
+// "Fokus" buttons on pane headers in grid mode
+document.querySelectorAll('.btn-focus-pane').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const target = btn.getAttribute('data-target');
+    switchView(target);
+  });
+});
 
 // API Calls
 async function fetchFeeds() {
@@ -343,6 +604,8 @@ function markAllRead() {
 
 elBtnSync.addEventListener('click', triggerSync);
 elBtnMarkAll.addEventListener('click', markAllRead);
+
+// Sort Toggle
 elBtnSort.addEventListener('click', () => {
   if (state.sortBy === 'latest') {
     state.sortBy = 'priority';
@@ -362,7 +625,7 @@ elSearchInput.addEventListener('input', e => {
   updateUI();
 });
 
-// SSE Setup for Real-time push updates
+// SSE Setup
 function setupSSE() {
   const evtSource = new EventSource('/api/events');
 
@@ -391,15 +654,10 @@ function setupSSE() {
       handleIncomingData(data);
     } catch (err) { console.error(err); }
   });
-
-  evtSource.onerror = () => {
-    console.warn('SSE connection interrupted, falling back to polling.');
-  };
 }
 
 // Global Keyboard Shortcuts
 window.addEventListener('keydown', e => {
-  // Ignore shortcuts when user is typing in search
   if (document.activeElement === elSearchInput) {
     if (e.key === 'Escape') {
       elSearchInput.blur();
@@ -415,17 +673,52 @@ window.addEventListener('keydown', e => {
     elSearchInput.focus();
     elSearchInput.select();
   } else if (e.key === 'Escape') {
-    closeInspector();
+    closeDrawer();
   } else if (e.key === 'r' || e.key === 'R') {
     triggerSync();
   } else if (e.key === 'm' || e.key === 'M') {
     markAllRead();
+  } else if (e.key === '0' || e.key === '`') {
+    switchView('grid');
+  } else if (e.key === '1') {
+    switchView('pane1');
+  } else if (e.key === '2') {
+    switchView('pane2');
+  } else if (e.key === '3') {
+    switchView('pane3');
   } else if (e.key === 'o' || e.key === 'O') {
     if (state.selectedItem && state.selectedItem.url) {
       window.open(state.selectedItem.url, '_blank');
     }
+  } else if (e.key === 'j' || e.key === 'ArrowDown') {
+    navigateItem(1);
+  } else if (e.key === 'k' || e.key === 'ArrowUp') {
+    navigateItem(-1);
   }
 });
+
+function navigateItem(direction) {
+  if (state.currentView === 'grid') return;
+  const list = state.currentView === 'pane1' ? state.filtered1 : (state.currentView === 'pane2' ? state.filtered2 : state.filtered3);
+  const topicFiltered = list.filter(item => matchesTopic(item, state.topicFilter));
+  if (!topicFiltered.length) return;
+
+  let currentIndex = topicFiltered.findIndex(it => it.id === (state.selectedItem && state.selectedItem.id));
+  if (currentIndex === -1) currentIndex = 0;
+  else currentIndex += direction;
+
+  if (currentIndex < 0) currentIndex = 0;
+  if (currentIndex >= topicFiltered.length) currentIndex = topicFiltered.length - 1;
+
+  const target = topicFiltered[currentIndex];
+  selectItem(target.id, state.activePane, false);
+
+  // Scroll active card into view
+  const activeCard = document.querySelector(`#focus-feed-list .feed-card[data-id="${target.id}"]`);
+  if (activeCard) {
+    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
 
 // Initial boot
 fetchFeeds();
