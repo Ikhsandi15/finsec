@@ -53,24 +53,21 @@
     </div>
   </header>
 
-  <!-- MARKET TICKER STRIP (KOYFIN / BLOOMBERG STYLE) -->
+  <!-- REAL-TIME MARKET & BREAKING WIRE STRIP (100% REAL DATA) -->
   <div class="market-ticker-strip">
-    <div class="ticker-group">
-      <span class="ticker-badge id-badge">INDONESIA MACRO</span>
-      <div class="ticker-item"><span class="lbl">BI RATE</span> <span class="val amber">6.00%</span></div>
-      <div class="ticker-item"><span class="lbl">USD/IDR</span> <span class="val amber">Rp 16.245</span></div>
-      <div class="ticker-item"><span class="lbl">IHSG</span> <span class="val green">7.185,4</span></div>
-      <div class="ticker-item"><span class="lbl">INFLASI YOY</span> <span class="val">2.86%</span></div>
-      <div class="ticker-item"><span class="lbl">SBN 10Y</span> <span class="val">6.82%</span></div>
+    <div class="live-rates-group">
+      <span class="ticker-badge id-badge">LIVE FOREX & CRYPTO</span>
+      <div class="ticker-item"><span class="lbl">USD/IDR</span> <span class="val amber" id="rate-usdidr">Memuat...</span></div>
+      <div class="ticker-item"><span class="lbl">BTC/USD</span> <span class="val green" id="rate-btcusd">Memuat...</span></div>
     </div>
     <div class="ticker-divider"></div>
-    <div class="ticker-group">
-      <span class="ticker-badge global-badge">GLOBAL MACRO</span>
-      <div class="ticker-item"><span class="lbl">FED FUNDS</span> <span class="val cyan">4.75% - 5.00%</span></div>
-      <div class="ticker-item"><span class="lbl">US 10Y</span> <span class="val cyan">4.42%</span></div>
-      <div class="ticker-item"><span class="lbl">BRENT OIL</span> <span class="val">$74.20</span></div>
-      <div class="ticker-item"><span class="lbl">DXY INDEX</span> <span class="val">106.15</span></div>
-      <div class="ticker-item"><span class="lbl">BITCOIN</span> <span class="val green">$63.850</span></div>
+    <div class="breaking-wire-group">
+      <span class="ticker-badge live-wire-badge">⚡ FLASH WIRE</span>
+      <div class="wire-ticker-wrapper">
+        <div class="wire-ticker-content" id="wire-ticker-content">
+          <span class="wire-placeholder">Memuat live breaking news wire...</span>
+        </div>
+      </div>
     </div>
   </div>
 

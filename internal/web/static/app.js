@@ -35,6 +35,11 @@ const elBtnSort = document.getElementById('btn-sort');
 const elSortIcon = document.getElementById('sort-icon');
 const elSortText = document.getElementById('sort-text');
 
+// Live Ticker Strip Elements (100% Real Data)
+const elRateUsdIdr = document.getElementById('rate-usdidr');
+const elRateBtcUsd = document.getElementById('rate-btcusd');
+const elWireTickerContent = document.getElementById('wire-ticker-content');
+
 // Views
 const elViewGrid = document.getElementById('view-grid');
 const elViewFocus = document.getElementById('view-focus');
@@ -90,6 +95,78 @@ function updateClocks() {
 }
 setInterval(updateClocks, 1000);
 updateClocks();
+
+// 1. REAL LIVE FOREX & CRYPTO QUOTES (100% REAL DATA FROM PUBLIC APIS)
+async function fetchLiveRates() {
+  // Real USD/IDR from open.er-api.com
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.rates && data.rates.IDR) {
+        elRateUsdIdr.textContent = `Rp ${Math.round(data.rates.IDR).toLocaleString('id-ID')}`;
+      }
+    }
+  } catch (e) {
+    if (elRateUsdIdr) elRateUsdIdr.textContent = '--';
+  }
+
+  // Real BTC/USD from Binance public API
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.price) {
+        elRateBtcUsd.textContent = `$${Math.round(parseFloat(data.price)).toLocaleString('en-US')}`;
+      }
+    }
+  } catch (e) {
+    try {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+      const data = await res.json();
+      if (data && data.bitcoin && data.bitcoin.usd) {
+        elRateBtcUsd.textContent = `$${data.bitcoin.usd.toLocaleString('en-US')}`;
+      }
+    } catch (err) {
+      if (elRateBtcUsd) elRateBtcUsd.textContent = '--';
+    }
+  }
+}
+setInterval(fetchLiveRates, 60000);
+fetchLiveRates();
+
+// 2. REAL-TIME FLASH WIRE (100% REAL FROM USER FEEDS - ZERO HOAX)
+function updateBreakingWire() {
+  if (!elWireTickerContent) return;
+  const allItems = [...state.pane1, ...state.pane2, ...state.pane3];
+  if (!allItems.length) return;
+
+  // Sort by published_at descending (latest first)
+  const latestItems = allItems.sort((a, b) => parseTime(b.published_at) - parseTime(a.published_at)).slice(0, 15);
+
+  const html = latestItems.map(it => {
+    return `
+      <span class="wire-item" data-id="${it.id}" data-pane="${it.pane}">
+        <span class="wire-src">[${escapeHtml(it.source)}]</span>
+        <span>${escapeHtml(it.title)}</span>
+        <span class="wire-time">(${relativeTime(it.published_at)})</span>
+        <span class="wire-sep">◆</span>
+      </span>
+    `;
+  }).join('');
+
+  // Duplicate for seamless marquee loop
+  elWireTickerContent.innerHTML = html + html;
+
+  elWireTickerContent.querySelectorAll('.wire-item').forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      const id = item.getAttribute('data-id');
+      const pane = parseInt(item.getAttribute('data-pane'), 10) || 1;
+      selectItem(id, pane, true);
+    });
+  });
+}
 
 function parseTime(val) {
   if (!val) return 0;
@@ -586,6 +663,7 @@ function handleIncomingData(data) {
     state.stats = data.stats;
   }
   updateUI();
+  updateBreakingWire();
 }
 
 function triggerSync() {

@@ -256,7 +256,7 @@ kbd {
   color: #000;
 }
 
-/* 2. MARKET TICKER STRIP (BLOOMBERG / KOYFIN STYLE) */
+/* 2. REAL-TIME MARKET TICKER & FLASH WIRE */
 .market-ticker-strip {
   background-color: #0b0e14;
   border-bottom: 1px solid var(--border-color);
@@ -264,15 +264,88 @@ kbd {
   display: flex;
   align-items: center;
   gap: 16px;
-  overflow-x: auto;
+  overflow: hidden;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-.ticker-group {
+.live-rates-group {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.breaking-wire-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.wire-ticker-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.wire-ticker-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
+  white-space: nowrap;
+  animation: ticker-slide 45s linear infinite;
+}
+
+.wire-ticker-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.wire-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-main);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.wire-item:hover {
+  color: var(--amber);
+  text-decoration: underline;
+}
+
+.wire-item .wire-src {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.wire-item .wire-time {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.wire-sep {
+  color: var(--text-dim);
+  margin-left: 10px;
+}
+
+.live-wire-badge {
+  background: var(--red-glow);
+  border: 1px solid var(--red-crit);
+  color: var(--red-crit);
 }
 
 .ticker-badge {
@@ -281,16 +354,12 @@ kbd {
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 2px;
+  flex-shrink: 0;
 }
 .ticker-badge.id-badge {
   background: var(--amber-glow);
   border: 1px solid var(--amber);
   color: var(--amber);
-}
-.ticker-badge.global-badge {
-  background: var(--cyan-glow);
-  border: 1px solid var(--cyan);
-  color: var(--cyan);
 }
 
 .ticker-item {
@@ -310,6 +379,7 @@ kbd {
   width: 1px;
   height: 16px;
   background-color: var(--border-color);
+  flex-shrink: 0;
 }
 
 /* 3. NAVIGATION TABS (SEGMENTED VIEW SWITCHER) */
