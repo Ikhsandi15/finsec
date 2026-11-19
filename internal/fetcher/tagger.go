@@ -115,7 +115,7 @@ func SanitizeHTML(input string) string {
 	return strings.TrimSpace(result)
 }
 
-// ExtractCVEs finds all unique CVE identifiers in the given text
+// ExtractCVEs finds all unique CVE identifiers in the given text, capped at 10
 func ExtractCVEs(text string) []string {
 	matches := cveRegex.FindAllString(text, -1)
 	if len(matches) == 0 {
@@ -128,6 +128,9 @@ func ExtractCVEs(text string) []string {
 		if !seen[upper] {
 			seen[upper] = true
 			result = append(result, upper)
+			if len(result) >= 10 {
+				break
+			}
 		}
 	}
 	return result

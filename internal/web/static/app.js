@@ -205,7 +205,7 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-function renderBadges(badges, cves) {
+function renderBadges(badges, cves, maxCVEs = 2) {
   let html = '';
   if (badges && badges.length) {
     badges.forEach(b => {
@@ -222,9 +222,15 @@ function renderBadges(badges, cves) {
     });
   }
   if (cves && cves.length) {
-    cves.forEach(c => {
+    const limit = maxCVEs > 0 ? maxCVEs : cves.length;
+    const slice = cves.slice(0, limit);
+    slice.forEach(c => {
       html += `<span class="tag-badge tag-cve" data-tag="${escapeHtml(c)}" title="Klik untuk filter ${escapeHtml(c)}" onclick="event.stopPropagation(); filterByTag('${escapeHtml(c)}')">${escapeHtml(c)}</span>`;
     });
+    if (maxCVEs > 0 && cves.length > maxCVEs) {
+      const remaining = cves.length - maxCVEs;
+      html += `<span class="tag-badge tag-more" title="${remaining} CVE lainnya">+${remaining} MORE</span>`;
+    }
   }
   return html;
 }
@@ -382,7 +388,7 @@ function renderList(container, items, paneNum, isFocusMode = false) {
     if (!isUnread) cardClass += ' read';
     if (isSelected) cardClass += ' active';
 
-    const badgesHtml = renderBadges(item.badges, item.cves);
+    const badgesHtml = renderBadges(item.badges, item.cves, 2);
 
     return `
       <div class="${cardClass}" data-id="${item.id}" data-pane="${paneNum}">
@@ -567,7 +573,7 @@ function showToast(msg) {
 // RENDER DEDICATED READER PANE IN FOCUS MODE
 function renderReaderPane(item) {
   if (!item) return;
-  const badgesHtml = renderBadges(item.badges, item.cves);
+  const badgesHtml = renderBadges(item.badges, item.cves, 6);
   const paneTitle = state.currentView === 'pane1' ? '01 // TECH & THREAT' : (state.currentView === 'pane2' ? '02 // GLOBAL MACRO' : '03 // INDONESIA MACRO');
 
   elReaderBody.innerHTML = `
@@ -625,7 +631,7 @@ function renderReaderPane(item) {
 
 // Drawer for Grid Mode
 function openDrawer(item) {
-  const badgesHtml = renderBadges(item.badges, item.cves);
+  const badgesHtml = renderBadges(item.badges, item.cves, 6);
 
   elDrawerContent.innerHTML = `
     <div class="inspector-main-title">${escapeHtml(item.title)}</div>
