@@ -34,6 +34,8 @@ const elBtnMarkAll = document.getElementById('btn-mark-all');
 const elBtnSort = document.getElementById('btn-sort');
 const elSortIcon = document.getElementById('sort-icon');
 const elSortText = document.getElementById('sort-text');
+const elBtnTheme = document.getElementById('btn-theme');
+const elThemeText = document.getElementById('theme-text');
 
 // Live Ticker Strip Elements (100% Real Data)
 const elRateUsdIdr = document.getElementById('rate-usdidr');
@@ -768,6 +770,8 @@ window.addEventListener('keydown', e => {
     navigateItem(1);
   } else if (e.key === 'k' || e.key === 'ArrowUp') {
     navigateItem(-1);
+  } else if (e.key === 't' || e.key === 'T') {
+    toggleTheme();
   }
 });
 
@@ -794,6 +798,31 @@ function navigateItem(direction) {
   }
 }
 
+// THEME CONTROLLER (INSTITUTIONAL DARK & LIGHT)
+function initTheme() {
+  const saved = localStorage.getItem('finsec-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  setTheme(saved);
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('finsec-theme', theme);
+  if (elThemeText) {
+    elThemeText.textContent = theme.toUpperCase();
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+}
+
+if (elBtnTheme) {
+  elBtnTheme.addEventListener('click', toggleTheme);
+}
+
 // Initial boot
+initTheme();
 fetchFeeds();
 setupSSE();

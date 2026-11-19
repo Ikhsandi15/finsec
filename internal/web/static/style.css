@@ -1144,3 +1144,269 @@ kbd {
   text-align: center;
   padding: 20px;
 }
+
+
+/* =========================================================================
+   10. LIGHT THEME (INSTITUTIONAL DAY MODE - HIGH CONTRAST & LEGIBILITY)
+   ========================================================================= */
+[data-theme="light"] {
+  --bg-pitch: #edf0f5;           /* Neutral cool slate canvas */
+  --bg-surface: #ffffff;         /* Pure white structural chrome */
+  --bg-card: #ffffff;            /* Pure white cards */
+  --bg-card-hover: #f8fafc;      /* Faint cool gray hover */
+  --bg-card-selected: #eff6ff;   /* Soft cobalt selection tint */
+
+  --border-subtle: #f1f5f9;
+  --border-base: #cbd5e1;        /* Crisp Slate-200/300 border */
+  --border-hover: #94a3b8;       /* Slate-400 hover border */
+  --border-active: #2563eb;      /* Vibrant cobalt focus */
+
+  --col-crit: #be123c;           /* Deep Rose (WCAG AAA contrast) */
+  --col-warn: #b45309;           /* Deep Amber */
+  --col-live: #047857;           /* Deep Emerald */
+  --col-info: #0369a1;           /* Deep Blue */
+  --col-tech: #475569;           /* Deep Slate */
+  --col-gov: #6d28d9;            /* Deep Purple */
+
+  --text-head: #0f172a;          /* Slate 900 high contrast */
+  --text-body: #1e293b;          /* Slate 800 body text */
+  --text-muted: #475569;         /* Slate 600 snippets */
+  --text-dim: #64748b;           /* Slate 500 captions */
+  --text-code: #0f172a;
+}
+
+[data-theme="light"] body {
+  background-color: var(--bg-pitch);
+  color: var(--text-body);
+}
+
+[data-theme="light"] kbd {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .clock-display {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+
+[data-theme="light"] .brand-badge {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .stat-pill {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .stat-pill.unread {
+  background: #ffe4e6;
+  border-color: #fecdd3;
+}
+[data-theme="light"] .stat-pill.unread .stat-v {
+  color: #be123c;
+}
+[data-theme="light"] .stat-pill.crit {
+  background: #ffe4e6;
+  border-color: #fecdd3;
+}
+[data-theme="light"] .stat-pill.crit .stat-v {
+  color: #be123c;
+}
+[data-theme="light"] .stat-pill.live {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+[data-theme="light"] .search-box input {
+  background: #ffffff;
+  border-color: var(--border-base);
+  color: var(--text-head);
+}
+[data-theme="light"] .search-box input:focus {
+  background: #ffffff;
+  border-color: var(--border-active);
+}
+[data-theme="light"] .search-shortcut {
+  background: #f1f5f9;
+  border-color: var(--border-base);
+  color: var(--text-dim);
+}
+
+[data-theme="light"] .btn-action {
+  background: #ffffff;
+  border-color: var(--border-base);
+  color: var(--text-muted);
+}
+[data-theme="light"] .btn-action:hover {
+  background: #f8fafc;
+  border-color: var(--border-hover);
+  color: var(--text-head);
+}
+
+[data-theme="light"] .market-ticker-strip {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .ticker-section-tag {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+[data-theme="light"] .ticker-section-tag.alert {
+  background: #ffe4e6;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+[data-theme="light"] .view-tab {
+  color: var(--text-muted);
+}
+[data-theme="light"] .view-tab:hover {
+  background: #f1f5f9;
+  color: var(--text-head);
+}
+[data-theme="light"] .view-tab.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+[data-theme="light"] .view-tab .tab-idx {
+  background: #f1f5f9;
+  color: var(--text-dim);
+}
+[data-theme="light"] .view-tab.active .tab-idx {
+  background: #dbeafe;
+  color: #1e40af;
+}
+[data-theme="light"] .tab-count {
+  background: #f1f5f9;
+  color: var(--text-dim);
+  border-color: var(--border-base);
+}
+[data-theme="light"] .view-tab.active .tab-count {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+[data-theme="light"] .btn-focus-pane {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .btn-focus-pane:hover {
+  background: #e2e8f0;
+  color: var(--text-head);
+}
+
+[data-theme="light"] .topic-pill {
+  background: #ffffff;
+  border-color: var(--border-base);
+  color: var(--text-muted);
+}
+[data-theme="light"] .topic-pill:hover {
+  background: #f8fafc;
+  color: var(--text-head);
+}
+[data-theme="light"] .topic-pill.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .feed-card {
+  background: var(--bg-card);
+  border-color: var(--border-base);
+}
+[data-theme="light"] .feed-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+[data-theme="light"] .feed-card.active {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  border-left: 3px solid #2563eb !important;
+}
+[data-theme="light"] .feed-card.unread {
+  border-left: 2px solid #94a3b8;
+}
+[data-theme="light"] .feed-card.unread.crit {
+  border-left: 2px solid var(--col-crit);
+}
+
+[data-theme="light"] .source-badge {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+[data-theme="light"] .tag-stack-crit {
+  background: #ffe4e6;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+[data-theme="light"] .tag-tech-ai {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+[data-theme="light"] .tag-id-macro {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #b45309;
+}
+[data-theme="light"] .tag-id-pol {
+  background: #f3e8ff;
+  border-color: #e9d5ff;
+  color: #6d28d9;
+}
+[data-theme="light"] .tag-global-mkt {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+[data-theme="light"] .tag-cve {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+[data-theme="light"] .reader-toolbar {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .reader-status-pill {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+[data-theme="light"] .reader-meta-card {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .reader-content-block {
+  background: #ffffff;
+  border-color: var(--border-base);
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .inspector-drawer {
+  background: #ffffff;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .drawer-header,
+[data-theme="light"] .drawer-footer {
+  background: #f8fafc;
+  border-color: var(--border-base);
+}
+[data-theme="light"] .btn-open-link {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+[data-theme="light"] .btn-open-link:hover {
+  background: #0f172a;
+}
