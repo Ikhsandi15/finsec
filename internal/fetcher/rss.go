@@ -110,7 +110,9 @@ func (f *RSSFetcher) Fetch(ctx context.Context, sourceName, url string, pane mod
 			IsCISA:      false,
 		}
 
-		f.tagger.TagAndScore(&feedItem)
+		if f.tagger != nil {
+			f.tagger.TagAndScore(&feedItem)
+		}
 		items = append(items, feedItem)
 	}
 

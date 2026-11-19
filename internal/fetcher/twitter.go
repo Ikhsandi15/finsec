@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -123,6 +124,7 @@ func (f *TwitterFetcher) Fetch(ctx context.Context, sourceName, url string, pane
 
 	entries := data.Props.PageProps.Timeline.Entries
 	var items []model.FeedItem
+	cutoff := time.Now().Add(-60 * 24 * time.Hour) // Max 60 days freshness cutoff
 
 	for _, entry := range entries {
 		tweet := entry.Content.Tweet
@@ -167,6 +169,11 @@ func (f *TwitterFetcher) Fetch(ctx context.Context, sourceName, url string, pane
 			}
 		}
 
+		// Drop tweets older than 60 days
+		if !pubTime.IsZero() && pubTime.Before(cutoff) {
+			continue
+		}
+
 		id := model.GenerateID(link, title, sourceName)
 
 		feedItem := model.FeedItem{
@@ -185,9 +192,15 @@ func (f *TwitterFetcher) Fetch(ctx context.Context, sourceName, url string, pane
 		}
 
 		items = append(items, feedItem)
-		if maxItems > 0 && len(items) >= maxItems {
-			break
-		}
+	}
+
+	// Sort tweets strictly chronological descending (newest first)
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].PublishedAt.After(items[j].PublishedAt)
+	})
+
+	if maxItems > 0 && len(items) > maxItems {
+		items = items[:maxItems]
 	}
 
 	return items, nil

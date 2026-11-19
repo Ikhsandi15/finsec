@@ -260,8 +260,16 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 		}
 	}
 
-	if strings.Contains(srcLower, "dark reading") || strings.Contains(textLower, "the_cyber_news") || strings.Contains(textLower, "intcyberdigest") {
+	if strings.Contains(srcLower, "dark reading") || strings.Contains(srcLower, "the_cyber_news") || strings.Contains(srcLower, "the cyber news") || strings.Contains(textLower, "the_cyber_news") || strings.Contains(textLower, "@the_cyber_news") {
 		badgeMap[model.BadgeCyberNews] = true
+		score += 25
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityMedium
+		}
+	}
+
+	if strings.Contains(srcLower, "intcyberdigest") || strings.Contains(textLower, "intcyberdigest") || strings.Contains(textLower, "@intcyberdigest") {
+		badgeMap[model.BadgeIntCyber] = true
 		score += 25
 		if item.Severity == "" || item.Severity == model.SeverityInfo {
 			item.Severity = model.SeverityMedium
@@ -311,6 +319,9 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 	}
 	if badgeMap[model.BadgeCyberNews] {
 		badges = append(badges, model.BadgeCyberNews)
+	}
+	if badgeMap[model.BadgeIntCyber] {
+		badges = append(badges, model.BadgeIntCyber)
 	}
 	if badgeMap[model.BadgeGithubPrj] {
 		badges = append(badges, model.BadgeGithubPrj)

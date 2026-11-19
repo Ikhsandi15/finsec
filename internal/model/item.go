@@ -55,6 +55,7 @@ const (
 	BadgeZachXBT   = "X: @zachxbt"
 	BadgeCVEDotNow = "X: @cvedotnow"
 	BadgeCyberNews = "X: @The_Cyber_News"
+	BadgeIntCyber  = "X: @IntCyberDigest"
 	BadgeGithubPrj = "X: @GithubProjects"
 	BadgeDarkWeb   = "X: @DarkWebInformer"
 )

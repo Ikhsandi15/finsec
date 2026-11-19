@@ -14,6 +14,8 @@ import (
 	"finsec-term/internal/storage"
 )
 
+const MaxItemAge = 60 * 24 * time.Hour
+
 type FetchResult struct {
 	Pane1Items []model.FeedItem
 	Pane2Items []model.FeedItem
@@ -87,7 +89,11 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil // Don't abort other feeds
 			}
 
+			cutoff := time.Now().Add(-MaxItemAge)
 			for _, it := range items {
+				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
+					continue
+				}
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
@@ -114,7 +120,11 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil
 			}
 
+			cutoff := time.Now().Add(-MaxItemAge)
 			for _, it := range items {
+				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
+					continue
+				}
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
@@ -141,7 +151,11 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 				return nil
 			}
 
+			cutoff := time.Now().Add(-MaxItemAge)
 			for _, it := range items {
+				if !it.PublishedAt.IsZero() && it.PublishedAt.Before(cutoff) {
+					continue
+				}
 				if !seenIDs[it.ID] {
 					seenIDs[it.ID] = true
 					if m.cache != nil {
