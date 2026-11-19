@@ -18,14 +18,62 @@ var (
 )
 
 type Tagger struct {
-	rules *config.RulesConfig
+	rules        *config.RulesConfig
+	stackRegex   *regexp.Regexp
+	techRegex    *regexp.Regexp
+	idMacroRegex *regexp.Regexp
+	idPolRegex   *regexp.Regexp
+	globalRegex  *regexp.Regexp
+}
+
+func isWordChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_'
+}
+
+// buildRegex compiles a list of keywords into a single case-insensitive regex enforcing word boundaries
+func buildRegex(keywords []string) *regexp.Regexp {
+	if len(keywords) == 0 {
+		return nil
+	}
+	var patterns []string
+	for _, kw := range keywords {
+		kw = strings.TrimSpace(kw)
+		if kw == "" {
+			continue
+		}
+		runes := []rune(kw)
+		var p strings.Builder
+
+		// If first character is an alphanumeric word character, require word boundary
+		if isWordChar(runes[0]) {
+			p.WriteString(`\b`)
+		}
+		p.WriteString(regexp.QuoteMeta(kw))
+		// If last character is an alphanumeric word character, require word boundary
+		if isWordChar(runes[len(runes)-1]) {
+			p.WriteString(`\b`)
+		}
+		patterns = append(patterns, p.String())
+	}
+	if len(patterns) == 0 {
+		return nil
+	}
+	fullPattern := "(?i)(?:" + strings.Join(patterns, "|") + ")"
+	return regexp.MustCompile(fullPattern)
 }
 
 func NewTagger(rules *config.RulesConfig) *Tagger {
 	if rules == nil {
 		rules = &config.DefaultConfig().Rules
 	}
-	return &Tagger{rules: rules}
+	return &Tagger{
+		rules:        rules,
+		stackRegex:   buildRegex(rules.StackKeywords),
+		techRegex:    buildRegex(rules.TechKeywords),
+		idMacroRegex: buildRegex(rules.IDMacroKeywords),
+		idPolRegex:   buildRegex(rules.IDPolKeywords),
+		globalRegex:  buildRegex(rules.GlobalKeywords),
+	}
 }
 
 // SanitizeHTML strips HTML tags, replaces breaks with newlines, decodes entities, and trims whitespace
@@ -103,16 +151,6 @@ func ExtractCWEs(text string) []string {
 	return result
 }
 
-func containsWord(target, keyword string) bool {
-	// Case-insensitive boundary match or substring match
-	t := strings.ToLower(target)
-	k := strings.ToLower(keyword)
-	if strings.Contains(t, k) {
-		return true
-	}
-	return false
-}
-
 // TagAndScore inspects item content, extracts CVEs/CWEs, assigns badges, severity and calculates priority score
 func (t *Tagger) TagAndScore(item *model.FeedItem) {
 	combinedText := item.Title + " " + item.Description + " " + item.VendorProject + " " + item.Product
@@ -138,81 +176,46 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 		item.Severity = model.SeverityCritical
 	}
 
-	// Check Stack Crit keywords
-	stackMatched := false
-	for _, kw := range t.rules.StackKeywords {
-		if containsWord(combinedText, kw) {
-			stackMatched = true
-			score += 40
-			break
-		}
-	}
-	if stackMatched {
+	// Check Stack Crit keywords with word boundary regex
+	if t.stackRegex != nil && t.stackRegex.MatchString(combinedText) {
 		badgeMap[model.BadgeStackCrit] = true
+		score += 40
 		if item.Severity == "" || item.Severity != model.SeverityCritical {
 			item.Severity = model.SeverityCritical
 		}
 	}
 
-	// Check ID Macro
-	idMacroMatched := false
-	for _, kw := range t.rules.IDMacroKeywords {
-		if containsWord(combinedText, kw) {
-			idMacroMatched = true
-			score += 35
-			break
-		}
-	}
-	if idMacroMatched {
+	// Check ID Macro keywords with word boundary regex
+	if t.idMacroRegex != nil && t.idMacroRegex.MatchString(combinedText) {
 		badgeMap[model.BadgeIDMacro] = true
+		score += 35
 		if item.Severity == "" || item.Severity == model.SeverityInfo {
 			item.Severity = model.SeverityHigh
 		}
 	}
 
-	// Check ID Pol
-	idPolMatched := false
-	for _, kw := range t.rules.IDPolKeywords {
-		if containsWord(combinedText, kw) {
-			idPolMatched = true
-			score += 25
-			break
-		}
-	}
-	if idPolMatched {
+	// Check ID Pol keywords with word boundary regex
+	if t.idPolRegex != nil && t.idPolRegex.MatchString(combinedText) {
 		badgeMap[model.BadgeIDPol] = true
+		score += 25
 		if item.Severity == "" || item.Severity == model.SeverityInfo {
 			item.Severity = model.SeverityMedium
 		}
 	}
 
-	// Check Global Mkt
-	globalMatched := false
-	for _, kw := range t.rules.GlobalKeywords {
-		if containsWord(combinedText, kw) {
-			globalMatched = true
-			score += 20
-			break
-		}
-	}
-	if globalMatched {
+	// Check Global Mkt keywords with word boundary regex
+	if t.globalRegex != nil && t.globalRegex.MatchString(combinedText) {
 		badgeMap[model.BadgeGlobalMkt] = true
+		score += 20
 		if item.Severity == "" || item.Severity == model.SeverityInfo {
 			item.Severity = model.SeverityMedium
 		}
 	}
 
-	// Check Tech & AI
-	techMatched := false
-	for _, kw := range t.rules.TechKeywords {
-		if containsWord(combinedText, kw) {
-			techMatched = true
-			score += 30
-			break
-		}
-	}
-	if techMatched {
+	// Check Tech & AI keywords with word boundary regex
+	if t.techRegex != nil && t.techRegex.MatchString(combinedText) {
 		badgeMap[model.BadgeTechAI] = true
+		score += 30
 		if item.Severity == "" || item.Severity == model.SeverityInfo {
 			item.Severity = model.SeverityMedium
 		}

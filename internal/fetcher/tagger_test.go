@@ -103,4 +103,47 @@ func TestTagger_TagAndScore(t *testing.T) {
 	if !hasGlobal {
 		t.Errorf("expected GLOBAL-MKT badge, got %v", item3.Badges)
 	}
+
+	// Test 4: False Positive Substring Regression (e.g. Haiti -> "ai", Software -> "war")
+	item4 := model.FeedItem{
+		Title:       "Geng Pendeta Ketahuan Bunuh Presiden, Tembak Mati di Kamar Tidur",
+		Description: "Hakim Miami vonis Christian Emmanuel Sanon bersalah atas konspirasi pembunuhan Presiden Haiti Jovenel Moise.",
+	}
+	tagger.TagAndScore(&item4)
+
+	for _, b := range item4.Badges {
+		if b == model.BadgeTechAI {
+			t.Errorf("False positive: 'Haiti' must NOT trigger TECH-AI badge! Badges: %v", item4.Badges)
+		}
+	}
+
+	// Test 5: True Positive AI matching
+	item5 := model.FeedItem{
+		Title:       "OpenAI Mengumumkan Terobosan Baru Model AI Generatif",
+		Description: "Perusahaan memperkenalkan sistem o3 yang berfokus pada penalaran mendalam.",
+	}
+	tagger.TagAndScore(&item5)
+
+	hasTechAI := false
+	for _, b := range item5.Badges {
+		if b == model.BadgeTechAI {
+			hasTechAI = true
+		}
+	}
+	if !hasTechAI {
+		t.Errorf("expected TECH-AI badge for genuine AI news, got %v", item5.Badges)
+	}
+
+	// Test 6: False Positive 'War' in 'Software'
+	item6 := model.FeedItem{
+		Title:       "New Software Architecture for Enterprise Scale",
+		Description: "Engineers present new forward-looking benchmarks.",
+	}
+	tagger.TagAndScore(&item6)
+
+	for _, b := range item6.Badges {
+		if b == model.BadgeGlobalMkt {
+			t.Errorf("False positive: 'Software' must NOT trigger GLOBAL-MKT ('War') badge! Badges: %v", item6.Badges)
+		}
+	}
 }
