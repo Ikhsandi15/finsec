@@ -14,6 +14,7 @@ let state = {
     is_syncing: false,
   },
   searchQuery: '',
+  selectedTag: '',
   selectedItem: null,
   activePane: 1,
   currentView: 'grid', // 'grid', 'pane1', 'pane2', 'pane3'
@@ -215,13 +216,14 @@ function renderBadges(badges, cves) {
       else if (b === 'ID-POL') cls += 'tag-id-pol';
       else if (b === 'GLOBAL-MKT') cls += 'tag-global-mkt';
       else if (b === 'CVE') cls += 'tag-cve';
+      else if (b.startsWith('X:') || b.startsWith('@')) cls += 'tag-x-account';
       else cls += 'tag-tech-ai';
-      html += `<span class="${cls}">${escapeHtml(b)}</span>`;
+      html += `<span class="${cls}" data-tag="${escapeHtml(b)}" title="Klik untuk filter tag ${escapeHtml(b)}" onclick="event.stopPropagation(); filterByTag('${escapeHtml(b)}')">${escapeHtml(b)}</span>`;
     });
   }
   if (cves && cves.length) {
     cves.forEach(c => {
-      html += `<span class="tag-badge tag-cve">${escapeHtml(c)}</span>`;
+      html += `<span class="tag-badge tag-cve" data-tag="${escapeHtml(c)}" title="Klik untuk filter ${escapeHtml(c)}" onclick="event.stopPropagation(); filterByTag('${escapeHtml(c)}')">${escapeHtml(c)}</span>`;
     });
   }
   return html;
@@ -294,7 +296,20 @@ function matchesTopic(item, topic) {
 // Apply Filtering & Sorting
 function applyFilter() {
   const q = state.searchQuery.trim().toLowerCase();
+  const activeTag = state.selectedTag ? state.selectedTag.toLowerCase() : '';
+
   const filterFn = item => {
+    // Check active tag filter if set
+    if (activeTag) {
+      const matchBadge = item.badges && item.badges.some(b => b.toLowerCase().includes(activeTag));
+      const matchCve = item.cves && item.cves.some(c => c.toLowerCase().includes(activeTag));
+      const cleanKeyword = activeTag.replace('x:', '').replace('@', '').trim();
+      const matchSource = item.source && item.source.toLowerCase().includes(cleanKeyword);
+      if (!matchBadge && !matchCve && !matchSource) {
+        return false;
+      }
+    }
+
     if (!q) return true;
     if (item.title && item.title.toLowerCase().includes(q)) return true;
     if (item.description && item.description.toLowerCase().includes(q)) return true;
@@ -320,6 +335,29 @@ function applyFilter() {
   state.filtered1 = state.pane1.filter(filterFn).sort(sortFn);
   state.filtered2 = state.pane2.filter(filterFn).sort(sortFn);
   state.filtered3 = state.pane3.filter(filterFn).sort(sortFn);
+}
+
+function filterByTag(tag) {
+  if (state.selectedTag === tag) {
+    state.selectedTag = '';
+  } else {
+    state.selectedTag = tag;
+  }
+  updateTagPills();
+  applyFilter();
+  updateUI();
+}
+
+function updateTagPills() {
+  const pills = document.querySelectorAll('.tag-pill');
+  pills.forEach(p => {
+    const pTag = p.getAttribute('data-tag') || '';
+    if (pTag === state.selectedTag) {
+      p.classList.add('active');
+    } else {
+      p.classList.remove('active');
+    }
+  });
 }
 
 // Render Card List
@@ -736,6 +774,17 @@ elSearchInput.addEventListener('input', e => {
   updateUI();
 });
 
+// Quick Tag Filters Click Listener
+const elTagFilterScroll = document.getElementById('tag-filter-scroll');
+if (elTagFilterScroll) {
+  elTagFilterScroll.addEventListener('click', e => {
+    const btn = e.target.closest('.tag-pill');
+    if (!btn) return;
+    const tag = btn.getAttribute('data-tag') || '';
+    filterByTag(tag);
+  });
+}
+
 // SSE Setup
 function setupSSE() {
   const evtSource = new EventSource('/api/events');
@@ -784,7 +833,11 @@ window.addEventListener('keydown', e => {
     elSearchInput.focus();
     elSearchInput.select();
   } else if (e.key === 'Escape') {
-    closeDrawer();
+    if (state.selectedTag) {
+      filterByTag('');
+    } else {
+      closeDrawer();
+    }
   } else if (e.key === 'r' || e.key === 'R') {
     triggerSync();
   } else if (e.key === 'm' || e.key === 'M') {

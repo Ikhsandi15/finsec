@@ -229,6 +229,50 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 		}
 	}
 
+	// Check Social & Authority Intelligence Sources
+	srcLower := strings.ToLower(item.Source)
+	textLower := strings.ToLower(combinedText)
+
+	if strings.Contains(srcLower, "antikorupsi") || strings.Contains(srcLower, "icw") || strings.Contains(textLower, "@antikorupsi") {
+		badgeMap[model.BadgeICW] = true
+		score += 25
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityMedium
+		}
+	}
+
+	if strings.Contains(srcLower, "zachxbt") || strings.Contains(textLower, "zachxbt") || strings.Contains(textLower, "@zachxbt") {
+		badgeMap[model.BadgeZachXBT] = true
+		score += 35
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityHigh
+		}
+	}
+
+	if strings.Contains(srcLower, "cve project") || strings.Contains(textLower, "cvedotnow") || strings.Contains(textLower, "@cvedotnow") {
+		badgeMap[model.BadgeCVEDotNow] = true
+		score += 30
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityHigh
+		}
+	}
+
+	if strings.Contains(srcLower, "dark reading") || strings.Contains(textLower, "the_cyber_news") || strings.Contains(textLower, "intcyberdigest") {
+		badgeMap[model.BadgeCyberNews] = true
+		score += 25
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityMedium
+		}
+	}
+
+	if strings.Contains(srcLower, "github blog") || strings.Contains(textLower, "githubprojects") {
+		badgeMap[model.BadgeGithubPrj] = true
+		score += 20
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityMedium
+		}
+	}
+
 	// Default severity if none assigned
 	if item.Severity == "" {
 		item.Severity = model.SeverityInfo
@@ -241,6 +285,21 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 	}
 	if badgeMap[model.BadgeCVE] && !badgeMap[model.BadgeStackCrit] {
 		badges = append(badges, model.BadgeCVE)
+	}
+	if badgeMap[model.BadgeZachXBT] {
+		badges = append(badges, model.BadgeZachXBT)
+	}
+	if badgeMap[model.BadgeICW] {
+		badges = append(badges, model.BadgeICW)
+	}
+	if badgeMap[model.BadgeCVEDotNow] {
+		badges = append(badges, model.BadgeCVEDotNow)
+	}
+	if badgeMap[model.BadgeCyberNews] {
+		badges = append(badges, model.BadgeCyberNews)
+	}
+	if badgeMap[model.BadgeGithubPrj] {
+		badges = append(badges, model.BadgeGithubPrj)
 	}
 	if badgeMap[model.BadgeIDMacro] {
 		badges = append(badges, model.BadgeIDMacro)

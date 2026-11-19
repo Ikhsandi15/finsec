@@ -146,4 +146,39 @@ func TestTagger_TagAndScore(t *testing.T) {
 			t.Errorf("False positive: 'Software' must NOT trigger GLOBAL-MKT ('War') badge! Badges: %v", item6.Badges)
 		}
 	}
+
+	// Test 7: Social & X Account Badges
+	item7 := model.FeedItem{
+		Source:      "ZachXBT On-Chain Intel",
+		Title:       "TeleSwap exploit investigation: $735K stolen",
+		Description: "Tracing transaction hash to Tornado Cash.",
+	}
+	tagger.TagAndScore(&item7)
+
+	hasZach := false
+	for _, b := range item7.Badges {
+		if b == model.BadgeZachXBT {
+			hasZach = true
+		}
+	}
+	if !hasZach {
+		t.Errorf("expected %s badge, got %v", model.BadgeZachXBT, item7.Badges)
+	}
+
+	item8 := model.FeedItem{
+		Source:      "ICW Antikorupsi",
+		Title:       "Laporan Hasil Pemantauan Tren Vonis Korupsi",
+		Description: "Kerugian negara capai triliunan rupiah.",
+	}
+	tagger.TagAndScore(&item8)
+
+	hasICW := false
+	for _, b := range item8.Badges {
+		if b == model.BadgeICW {
+			hasICW = true
+		}
+	}
+	if !hasICW {
+		t.Errorf("expected %s badge, got %v", model.BadgeICW, item8.Badges)
+	}
 }

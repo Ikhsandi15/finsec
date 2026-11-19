@@ -49,6 +49,13 @@ const (
 	BadgeGlobalMkt = "GLOBAL-MKT"
 	BadgeCVE       = "CVE"
 	BadgeTechAI    = "TECH-AI"
+
+	// Social & Authority Intelligence Badges
+	BadgeICW       = "X: @antikorupsi"
+	BadgeZachXBT   = "X: @zachxbt"
+	BadgeCVEDotNow = "X: @cvedotnow"
+	BadgeCyberNews = "X: @The_Cyber_News"
+	BadgeGithubPrj = "X: @GithubProjects"
 )
 
 type FeedItem struct {
