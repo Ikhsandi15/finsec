@@ -1,0 +1,339 @@
+package web
+
+import (
+	"context"
+	"embed"
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+
+	"finsec-term/internal/config"
+	"finsec-term/internal/fetcher"
+	"finsec-term/internal/model"
+	"finsec-term/internal/storage"
+)
+
+//go:embed static/*
+var staticFS embed.FS
+
+type SSEClient chan string
+
+type Server struct {
+	cfg        *config.Config
+	manager    *fetcher.Manager
+	cache      *storage.Cache
+	mu         sync.RWMutex
+	lastResult *fetcher.FetchResult
+	isSyncing  bool
+	clients    map[SSEClient]bool
+	clientsMu  sync.Mutex
+}
+
+type StatsResponse struct {
+	TotalItems  int       `json:"total_items"`
+	UnreadCount int       `json:"unread_count"`
+	CritCount   int       `json:"crit_count"`
+	LastSync    time.Time `json:"last_sync"`
+	IsSyncing   bool      `json:"is_syncing"`
+}
+
+type FeedsResponse struct {
+	Pane1CVE         []model.FeedItem `json:"pane1_cve"`
+	Pane2GlobalMacro []model.FeedItem `json:"pane2_global_macro"`
+	Pane3IDMacro     []model.FeedItem `json:"pane3_id_macro"`
+	Stats            StatsResponse    `json:"stats"`
+	Errors           []string         `json:"errors"`
+}
+
+func NewServer(cfg *config.Config, manager *fetcher.Manager, cache *storage.Cache) *Server {
+	return &Server{
+		cfg:     cfg,
+		manager: manager,
+		cache:   cache,
+		clients: make(map[SSEClient]bool),
+	}
+}
+
+// StartBackgroundSync periodically fetches updates
+func (s *Server) StartBackgroundSync(ctx context.Context) {
+	// Initial fetch
+	go s.SyncFeeds()
+
+	interval := s.cfg.RefreshInterval
+	if interval < time.Minute {
+		interval = 15 * time.Minute
+	}
+	ticker := time.NewTicker(interval)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				s.SyncFeeds()
+			}
+		}
+	}()
+}
+
+// SyncFeeds initiates concurrent feed retrieval and broadcasts results to SSE clients
+func (s *Server) SyncFeeds() {
+	s.mu.Lock()
+	if s.isSyncing {
+		s.mu.Unlock()
+		return
+	}
+	s.isSyncing = true
+	s.mu.Unlock()
+
+	s.broadcastSSE("sync_started", map[string]interface{}{"is_syncing": true})
+
+	res, err := s.manager.FetchAll(context.Background())
+
+	s.mu.Lock()
+	s.isSyncing = false
+	if err == nil && res != nil {
+		s.lastResult = res
+	}
+	s.mu.Unlock()
+
+	s.broadcastSSE("sync_finished", s.buildFeedsResponse())
+}
+
+func (s *Server) buildFeedsResponse() FeedsResponse {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var (
+		p1, p2, p3 []model.FeedItem
+		errs       []string
+		lastSync   time.Time
+	)
+
+	if s.lastResult != nil {
+		p1 = s.lastResult.Pane1Items
+		p2 = s.lastResult.Pane2Items
+		p3 = s.lastResult.Pane3Items
+		errs = s.lastResult.Errors
+		lastSync = s.lastResult.FetchedAt
+	}
+
+	unread := 0
+	crit := 0
+	countItem := func(items []model.FeedItem) {
+		for _, it := range items {
+			if !it.IsRead {
+				unread++
+			}
+			if it.Severity == model.SeverityCritical {
+				crit++
+			}
+		}
+	}
+	countItem(p1)
+	countItem(p2)
+	countItem(p3)
+
+	return FeedsResponse{
+		Pane1CVE:         p1,
+		Pane2GlobalMacro: p2,
+		Pane3IDMacro:     p3,
+		Stats: StatsResponse{
+			TotalItems:  len(p1) + len(p2) + len(p3),
+			UnreadCount: unread,
+			CritCount:   crit,
+			LastSync:    lastSync,
+			IsSyncing:   s.isSyncing,
+		},
+		Errors: errs,
+	}
+}
+
+func (s *Server) broadcastSSE(event string, payload interface{}) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	msg := fmt.Sprintf("event: %s\ndata: %s\n\n", event, string(data))
+
+	s.clientsMu.Lock()
+	defer s.clientsMu.Unlock()
+	for client := range s.clients {
+		select {
+		case client <- msg:
+		default:
+		}
+	}
+}
+
+func (s *Server) Routes() http.Handler {
+	mux := http.NewServeMux()
+
+	// API Routes
+	mux.HandleFunc("/api/feeds", s.handleGetFeeds)
+	mux.HandleFunc("/api/refresh", s.handleRefresh)
+	mux.HandleFunc("/api/read", s.handleMarkRead)
+	mux.HandleFunc("/api/events", s.handleSSE)
+
+	// Static Assets with no-cache headers to prevent stale UI
+	sub, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		log.Fatalf("failed to create static sub-filesystem: %v", err)
+	}
+	fileServer := http.FileServer(http.FS(sub))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		fileServer.ServeHTTP(w, r)
+	})
+
+	return s.corsMiddleware(mux)
+}
+
+func (s *Server) corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) handleGetFeeds(w http.ResponseWriter, r *http.Request) {
+	resp := s.buildFeedsResponse()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	go s.SyncFeeds()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "sync_triggered"})
+}
+
+type MarkReadPayload struct {
+	ID   string `json:"id"`
+	Pane int    `json:"pane"`
+	All  bool   `json:"all"`
+}
+
+func (s *Server) handleMarkRead(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req MarkReadPayload
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	s.mu.Lock()
+	if s.lastResult != nil {
+		if req.All {
+			markSlice := func(items []model.FeedItem) {
+				for i := range items {
+					items[i].IsRead = true
+					if s.cache != nil {
+						s.cache.MarkRead(items[i].ID)
+					}
+				}
+			}
+			if req.Pane == 1 || req.Pane == 0 {
+				markSlice(s.lastResult.Pane1Items)
+			}
+			if req.Pane == 2 || req.Pane == 0 {
+				markSlice(s.lastResult.Pane2Items)
+			}
+			if req.Pane == 3 || req.Pane == 0 {
+				markSlice(s.lastResult.Pane3Items)
+			}
+		} else if req.ID != "" {
+			markItem := func(items []model.FeedItem) {
+				for i := range items {
+					if items[i].ID == req.ID {
+						items[i].IsRead = true
+					}
+				}
+			}
+			markItem(s.lastResult.Pane1Items)
+			markItem(s.lastResult.Pane2Items)
+			markItem(s.lastResult.Pane3Items)
+			if s.cache != nil {
+				s.cache.MarkRead(req.ID)
+			}
+		}
+	}
+	if s.cache != nil {
+		_ = s.cache.Save()
+	}
+	s.mu.Unlock()
+
+	resp := s.buildFeedsResponse()
+	s.broadcastSSE("feeds_updated", resp)
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp.Stats)
+}
+
+func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	clientChan := make(SSEClient, 10)
+	s.clientsMu.Lock()
+	s.clients[clientChan] = true
+	s.clientsMu.Unlock()
+
+	defer func() {
+		s.clientsMu.Lock()
+		delete(s.clients, clientChan)
+		close(clientChan)
+		s.clientsMu.Unlock()
+	}()
+
+	// Send current data immediately upon connect
+	initialData, _ := json.Marshal(s.buildFeedsResponse())
+	_, _ = fmt.Fprintf(w, "event: initial\ndata: %s\n\n", string(initialData))
+	flusher.Flush()
+
+	notify := r.Context().Done()
+	heartbeat := time.NewTicker(20 * time.Second)
+	defer heartbeat.Stop()
+
+	for {
+		select {
+		case <-notify:
+			return
+		case msg := <-clientChan:
+			_, _ = fmt.Fprint(w, msg)
+			flusher.Flush()
+		case <-heartbeat.C:
+			_, _ = fmt.Fprint(w, ": heartbeat\n\n")
+			flusher.Flush()
+		}
+	}
+}

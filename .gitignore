@@ -1,0 +1,27 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+finsec-term
+finsec-web
+
+# Output / builds
+bin/
+dist/
+
+# Local cache & temporary files
+*.tmp
+cache.json
+.finsec-term/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
