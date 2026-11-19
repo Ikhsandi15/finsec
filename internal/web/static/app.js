@@ -68,6 +68,8 @@ const elFocusFeedList = document.getElementById('focus-feed-list');
 const elReaderBody = document.getElementById('reader-body');
 const elReaderOpenLink = document.getElementById('reader-open-link');
 const elReaderMarkRead = document.getElementById('reader-mark-read');
+const elReaderCopyLink = document.getElementById('reader-copy-link');
+const elToastBox = document.getElementById('toast-box');
 
 // Drawer Elements (Grid View modal)
 const elDrawer = document.getElementById('inspector-drawer');
@@ -512,36 +514,57 @@ function selectItem(id, paneNum, openDrawerInGrid = true) {
   }
 }
 
+// TOAST NOTIFICATIONS
+let toastTimer = null;
+function showToast(msg) {
+  if (!elToastBox) return;
+  elToastBox.textContent = msg;
+  elToastBox.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    elToastBox.classList.remove('show');
+  }, 2200);
+}
+
 // RENDER DEDICATED READER PANE IN FOCUS MODE
 function renderReaderPane(item) {
   if (!item) return;
   const badgesHtml = renderBadges(item.badges, item.cves);
+  const paneTitle = state.currentView === 'pane1' ? '01 // TECH & THREAT' : (state.currentView === 'pane2' ? '02 // GLOBAL MACRO' : '03 // INDONESIA MACRO');
 
   elReaderBody.innerHTML = `
+    <div class="reader-breadcrumb">
+      <span class="bc-radar">RADAR</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-pane">${escapeHtml(paneTitle)}</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-src">${escapeHtml(item.source)}</span>
+    </div>
+
     <div class="reader-article-header">
       <div class="badges-row" style="margin-bottom: 6px;">${badgesHtml}</div>
       <h1 class="reader-main-title">${escapeHtml(item.title)}</h1>
 
       <div class="reader-meta-cards">
         <div class="reader-meta-card">
-          <span class="meta-k">SUMBER</span>
-          <span class="meta-v" style="color:var(--cyan);">${escapeHtml(item.source)}</span>
+          <span class="meta-k">SOURCE</span>
+          <span class="meta-v" style="color:var(--col-info);">${escapeHtml(item.source)}</span>
         </div>
         <div class="reader-meta-card">
-          <span class="meta-k">WAKTU TERBIT</span>
+          <span class="meta-k">PUBLISHED</span>
           <span class="meta-v">${formatWIB(item.published_at)}</span>
         </div>
         <div class="reader-meta-card">
-          <span class="meta-k">SEVERITY / PRIORITAS</span>
-          <span class="meta-v" style="color:${item.severity === 'CRIT' ? 'var(--red-crit)' : 'var(--amber)'}">
-            ${escapeHtml(item.severity || 'INFO')} (Skor: ${item.priority_score})
+          <span class="meta-k">SEVERITY</span>
+          <span class="meta-v" style="color:${item.severity === 'CRIT' ? 'var(--col-crit)' : 'var(--col-warn)'}">
+            ${escapeHtml(item.severity || 'INFO')} (SCORE: ${item.priority_score})
           </span>
         </div>
         ${item.cves && item.cves.length ? `
           <div class="reader-meta-card">
             <span class="meta-k">CVE IDENTIFIERS</span>
             <span class="meta-v">
-              ${item.cves.map(c => `<a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(c)}" target="_blank" style="color:var(--red-crit); font-weight:700; text-decoration:none; margin-right:6px;">${escapeHtml(c)} ↗</a>`).join('')}
+              ${item.cves.map(c => `<a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(c)}" target="_blank" style="color:var(--col-crit); font-weight:700; text-decoration:none; margin-right:6px;">${escapeHtml(c)} ↗</a>`).join('')}
             </span>
           </div>
         ` : ''}
@@ -555,7 +578,7 @@ function renderReaderPane(item) {
     </div>
 
     <div class="reader-content-block">
-      ${escapeHtml(item.description || 'Tidak ada deskripsi extended pada feed berita ini. Silakan klik tombol "BUKA SUMBER ASLI" di kanan atas untuk membaca artikel lengkap di portal media bersangkutan.')}
+      ${escapeHtml(item.description || 'No extended synopsis provided in this syndicated feed. Click "ORIGINAL SOURCE" above to inspect the complete article.')}
     </div>
   `;
 
@@ -685,15 +708,27 @@ elBtnMarkAll.addEventListener('click', markAllRead);
 elBtnSort.addEventListener('click', () => {
   if (state.sortBy === 'latest') {
     state.sortBy = 'priority';
-    elSortIcon.textContent = '⚡';
+    if (elSortIcon) elSortIcon.textContent = '';
     elSortText.textContent = 'PRIORITY FIRST';
   } else {
     state.sortBy = 'latest';
-    elSortIcon.textContent = '⏱️';
+    if (elSortIcon) elSortIcon.textContent = '';
     elSortText.textContent = 'LATEST FIRST';
   }
   updateUI();
 });
+
+if (elReaderCopyLink) {
+  elReaderCopyLink.addEventListener('click', () => {
+    if (state.selectedItem && state.selectedItem.url) {
+      navigator.clipboard.writeText(state.selectedItem.url).then(() => {
+        showToast('COPIED LINK TO CLIPBOARD');
+      }).catch(() => {
+        showToast('COULD NOT COPY LINK');
+      });
+    }
+  });
+}
 
 // Live Search Input
 elSearchInput.addEventListener('input', e => {
@@ -765,6 +800,12 @@ window.addEventListener('keydown', e => {
   } else if (e.key === 'o' || e.key === 'O') {
     if (state.selectedItem && state.selectedItem.url) {
       window.open(state.selectedItem.url, '_blank');
+    }
+  } else if (e.key === 'c' || e.key === 'C') {
+    if (state.selectedItem && state.selectedItem.url) {
+      navigator.clipboard.writeText(state.selectedItem.url).then(() => {
+        showToast('COPIED LINK TO CLIPBOARD');
+      });
     }
   } else if (e.key === 'j' || e.key === 'ArrowDown') {
     navigateItem(1);
