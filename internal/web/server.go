@@ -180,6 +180,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/refresh", s.handleRefresh)
 	mux.HandleFunc("/api/read", s.handleMarkRead)
 	mux.HandleFunc("/api/events", s.handleSSE)
+	mux.HandleFunc("/api/rates", s.handleMarketRates)
 
 	// Static Assets with no-cache headers to prevent stale UI
 	sub, err := fs.Sub(staticFS, "static")
@@ -336,4 +337,102 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 			flusher.Flush()
 		}
 	}
+}
+
+type MarketRatesResponse struct {
+	USDIDR    float64   `json:"usdidr"`
+	BTCUSD    float64   `json:"btcusd"`
+	Source    string    `json:"source"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+var (
+	cachedRates     MarketRatesResponse
+	cachedRatesTime time.Time
+	ratesMu         sync.Mutex
+)
+
+func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
+	ratesMu.Lock()
+	defer ratesMu.Unlock()
+
+	// Return cached if fetched in the last 30 seconds
+	if time.Since(cachedRatesTime) < 30*time.Second && cachedRates.USDIDR > 0 {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(cachedRates)
+		return
+	}
+
+	client := &http.Client{Timeout: 6 * time.Second}
+	var (
+		usdidr float64
+		btcusd float64
+		source = "Yahoo Finance (Refinitiv Spot FX)"
+	)
+
+	// Fetch USD/IDR from Yahoo Finance Chart API (exact spot rate provider used by Google)
+	req, err := http.NewRequest(http.MethodGet, "https://query1.finance.yahoo.com/v8/finance/chart/IDR=X", nil)
+	if err == nil {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+		resp, err := client.Do(req)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var yfResp struct {
+				Chart struct {
+					Result []struct {
+						Meta struct {
+							RegularMarketPrice float64 `json:"regularMarketPrice"`
+						} `json:"meta"`
+					} `json:"result"`
+				} `json:"chart"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&yfResp); err == nil {
+				if len(yfResp.Chart.Result) > 0 && yfResp.Chart.Result[0].Meta.RegularMarketPrice > 0 {
+					usdidr = yfResp.Chart.Result[0].Meta.RegularMarketPrice
+				}
+			}
+			resp.Body.Close()
+		}
+	}
+
+	// Fallback to Open Exchange Rates if Yahoo blocked
+	if usdidr == 0 {
+		resp, err := client.Get("https://open.er-api.com/v6/latest/USD")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var erResp struct {
+				Rates map[string]float64 `json:"rates"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&erResp); err == nil {
+				usdidr = erResp.Rates["IDR"]
+				source = "Open Exchange Rates API"
+			}
+			resp.Body.Close()
+		}
+	}
+
+	// Fetch BTC/USD from Binance
+	resp, err := client.Get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+	if err == nil && resp.StatusCode == http.StatusOK {
+		var binanceResp struct {
+			Price string `json:"price"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&binanceResp); err == nil {
+			var p float64
+			_, _ = fmt.Sscanf(binanceResp.Price, "%f", &p)
+			btcusd = p
+		}
+		resp.Body.Close()
+	}
+
+	if usdidr > 0 {
+		cachedRates = MarketRatesResponse{
+			USDIDR:    usdidr,
+			BTCUSD:    btcusd,
+			Source:    source,
+			UpdatedAt: time.Now(),
+		}
+		cachedRatesTime = time.Now()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(cachedRates)
 }

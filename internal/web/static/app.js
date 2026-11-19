@@ -96,43 +96,26 @@ function updateClocks() {
 setInterval(updateClocks, 1000);
 updateClocks();
 
-// 1. REAL LIVE FOREX & CRYPTO QUOTES (100% REAL DATA FROM PUBLIC APIS)
+// 1. REAL LIVE FOREX & CRYPTO QUOTES (FROM GO BACKEND / YAHOO FINANCE & BINANCE)
 async function fetchLiveRates() {
-  // Real USD/IDR from open.er-api.com
   try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const res = await fetch('/api/rates');
     if (res.ok) {
       const data = await res.json();
-      if (data && data.rates && data.rates.IDR) {
-        elRateUsdIdr.textContent = `Rp ${Math.round(data.rates.IDR).toLocaleString('id-ID')}`;
+      if (data && data.usdidr > 0) {
+        elRateUsdIdr.textContent = `Rp ${Math.round(data.usdidr).toLocaleString('id-ID')}`;
+        elRateUsdIdr.title = `Sumber: ${data.source}`;
+      }
+      if (data && data.btcusd > 0) {
+        elRateBtcUsd.textContent = `$${Math.round(data.btcusd).toLocaleString('en-US')}`;
+        elRateBtcUsd.title = 'Sumber: Binance Spot';
       }
     }
   } catch (e) {
     if (elRateUsdIdr) elRateUsdIdr.textContent = '--';
   }
-
-  // Real BTC/USD from Binance public API
-  try {
-    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.price) {
-        elRateBtcUsd.textContent = `$${Math.round(parseFloat(data.price)).toLocaleString('en-US')}`;
-      }
-    }
-  } catch (e) {
-    try {
-      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-      const data = await res.json();
-      if (data && data.bitcoin && data.bitcoin.usd) {
-        elRateBtcUsd.textContent = `$${data.bitcoin.usd.toLocaleString('en-US')}`;
-      }
-    } catch (err) {
-      if (elRateBtcUsd) elRateBtcUsd.textContent = '--';
-    }
-  }
 }
-setInterval(fetchLiveRates, 60000);
+setInterval(fetchLiveRates, 30000);
 fetchLiveRates();
 
 // 2. REAL-TIME FLASH WIRE (100% REAL FROM USER FEEDS - ZERO HOAX)
