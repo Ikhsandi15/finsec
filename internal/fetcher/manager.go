@@ -27,6 +27,7 @@ type Manager struct {
 	tagger      *Tagger
 	cisaFetcher *CISAFetcher
 	rssFetcher  *RSSFetcher
+	tgFetcher   *TelegramFetcher
 	cache       *storage.Cache
 }
 
@@ -37,7 +38,19 @@ func NewManager(cfg *config.Config, cache *storage.Cache) *Manager {
 		tagger:      tagger,
 		cisaFetcher: NewCISAFetcher(cfg.RequestTimeout, tagger),
 		rssFetcher:  NewRSSFetcher(cfg.RequestTimeout, tagger),
+		tgFetcher:   NewTelegramFetcher(cfg.RequestTimeout, tagger),
 		cache:       cache,
+	}
+}
+
+func (m *Manager) fetchFeed(ctx context.Context, f config.FeedSource, pane model.PaneID) ([]model.FeedItem, error) {
+	switch f.Type {
+	case config.FeedTypeCISA:
+		return m.cisaFetcher.Fetch(ctx, f.URL, m.cfg.MaxItemsPerFeed)
+	case config.FeedTypeTelegram:
+		return m.tgFetcher.Fetch(ctx, f.Name, f.URL, pane, m.cfg.MaxItemsPerFeed)
+	default:
+		return m.rssFetcher.Fetch(ctx, f.Name, f.URL, pane, m.cfg.MaxItemsPerFeed)
 	}
 }
 
@@ -61,15 +74,7 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 	for _, feed := range m.cfg.Feeds.Pane1CVE {
 		f := feed
 		g.Go(func() error {
-			var (
-				items []model.FeedItem
-				err   error
-			)
-			if f.Type == config.FeedTypeCISA {
-				items, err = m.cisaFetcher.Fetch(gCtx, f.URL, m.cfg.MaxItemsPerFeed)
-			} else {
-				items, err = m.rssFetcher.Fetch(gCtx, f.Name, f.URL, model.PaneCVE, m.cfg.MaxItemsPerFeed)
-			}
+			items, err := m.fetchFeed(gCtx, f, model.PaneCVE)
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -96,7 +101,7 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 	for _, feed := range m.cfg.Feeds.Pane2GlobalMacro {
 		f := feed
 		g.Go(func() error {
-			items, err := m.rssFetcher.Fetch(gCtx, f.Name, f.URL, model.PaneGlobalMacro, m.cfg.MaxItemsPerFeed)
+			items, err := m.fetchFeed(gCtx, f, model.PaneGlobalMacro)
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -123,7 +128,7 @@ func (m *Manager) FetchAll(parentCtx context.Context) (*FetchResult, error) {
 	for _, feed := range m.cfg.Feeds.Pane3IDMacro {
 		f := feed
 		g.Go(func() error {
-			items, err := m.rssFetcher.Fetch(gCtx, f.Name, f.URL, model.PaneIDMacro, m.cfg.MaxItemsPerFeed)
+			items, err := m.fetchFeed(gCtx, f, model.PaneIDMacro)
 
 			mu.Lock()
 			defer mu.Unlock()

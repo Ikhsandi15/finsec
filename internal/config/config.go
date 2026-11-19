@@ -12,8 +12,9 @@ import (
 type FeedType string
 
 const (
-	FeedTypeRSS  FeedType = "rss"
-	FeedTypeCISA FeedType = "cisa"
+	FeedTypeRSS      FeedType = "rss"
+	FeedTypeCISA     FeedType = "cisa"
+	FeedTypeTelegram FeedType = "telegram"
 )
 
 type FeedSource struct {
