@@ -226,32 +226,32 @@ function renderBadges(badges, cves) {
 // TOPIC FILTERS CONFIGURATION
 const topicPresets = {
   pane1: [
-    { id: 'all', label: 'SEMUA RADAR' },
-    { id: 'ai', label: '🤖 AI & BIG TECH' },
-    { id: 'dev', label: '⚡ DEVELOPER / GITHUB' },
-    { id: 'cisa', label: '🛡️ CISA KEV' },
-    { id: 'stack-crit', label: '🔥 STACK-CRIT' },
-    { id: 'rce', label: '🚨 RCE / 0-DAY' },
-    { id: 'golang', label: '🐹 GOLANG' },
-    { id: 'infra', label: '☁️ CLOUD / DB' },
+    { id: 'all', label: 'ALL FEEDS' },
+    { id: 'ai', label: 'AI & FRONTIER TECH' },
+    { id: 'dev', label: 'DEVELOPER & OPEN SOURCE' },
+    { id: 'cisa', label: 'CISA KEV' },
+    { id: 'stack-crit', label: 'STACK CRITICAL' },
+    { id: 'rce', label: 'RCE / ZERO-DAY' },
+    { id: 'golang', label: 'GOLANG' },
+    { id: 'infra', label: 'CLOUD & DATABASE' },
   ],
   pane2: [
-    { id: 'all', label: 'SEMUA MAKRO' },
-    { id: 'fed', label: 'THE FED / POWELL' },
-    { id: 'cpi', label: 'INFLASI / CPI' },
-    { id: 'treasury', label: 'BONDS / YIELDS' },
+    { id: 'all', label: 'ALL MACRO' },
+    { id: 'fed', label: 'THE FED / FOMC' },
+    { id: 'cpi', label: 'INFLATION / CPI' },
+    { id: 'treasury', label: 'BONDS & YIELDS' },
     { id: 'oil', label: 'CRUDE OIL' },
-    { id: 'crypto', label: 'BITCOIN / SENTIMENT' },
+    { id: 'crypto', label: 'CRYPTO / BTC' },
   ],
   pane3: [
-    { id: 'all', label: 'SEMUA PASAR RI' },
+    { id: 'all', label: 'ALL INDONESIA' },
     { id: 'bi', label: 'BANK INDONESIA / BI RATE' },
     { id: 'rupiah', label: 'RUPIAH (USD/IDR)' },
-    { id: 'ihsg', label: 'IHSG / BURSA' },
-    { id: 'sbn', label: 'SBN / OBLIGASI' },
-    { id: 'ojk', label: 'OJK / PERBANKAN' },
-    { id: 'pol', label: 'KABINET / APBN' },
-    { id: 'cyber', label: 'BSSN / CSIRT SIBER' },
+    { id: 'ihsg', label: 'IHSG & EQUITY' },
+    { id: 'sbn', label: 'SBN & BONDS' },
+    { id: 'ojk', label: 'OJK & BANKING' },
+    { id: 'pol', label: 'CABINET & FISCAL' },
+    { id: 'cyber', label: 'BSSN & CSIRT SIBER' },
   ],
 };
 
@@ -413,18 +413,18 @@ function renderFocusMode() {
 
   if (state.currentView === 'pane1') {
     targetItems = state.filtered1;
-    paneName = '[1] TECH, AI & CYBER RADAR';
-    paneDesc = 'Pemantauan Perkembangan AI, Big Tech, Kerentanan CISA KEV & Cloud Infrastructure';
+    paneName = '01 // TECH & THREAT RADAR';
+    paneDesc = 'AI Engineering, Server Infrastructure & Exploit Tracking';
     paneNum = 1;
   } else if (state.currentView === 'pane2') {
     targetItems = state.filtered2;
-    paneName = '[2] GLOBAL MACRO & GEOPOLITICS';
-    paneDesc = 'Pemantauan Suku Bunga The Fed, Inflasi CPI/PCE, Treasury, Minyak & Pasar Dunia';
+    paneName = '02 // GLOBAL MACRO & FOREX';
+    paneDesc = 'Central Bank Policy, Inflation, Sovereign Debt & Energy';
     paneNum = 2;
   } else if (state.currentView === 'pane3') {
     targetItems = state.filtered3;
-    paneName = '[3] ID MARKET, POLITIK & CYBER';
-    paneDesc = 'Pemantauan Bank Indonesia (BI Rate), Rupiah, IHSG, SBN, OJK & Insiden Siber';
+    paneName = '03 // INDONESIA MACRO & POL';
+    paneDesc = 'Bank Indonesia, Rupiah Spot, Fiscal Budget & Cyber Incidents';
     paneNum = 3;
   }
 
@@ -461,9 +461,9 @@ function renderFocusMode() {
   } else {
     elReaderBody.innerHTML = `
       <div class="reader-empty-state">
-        <span class="empty-icon">📭</span>
-        <h3>TIDAK ADA BERITA</h3>
-        <p>Tidak ada berita yang cocok dengan filter topik <strong>${state.topicFilter}</strong>.</p>
+        <div class="empty-icon-box">EMPTY</div>
+        <h3>NO MATCHING INTELLIGENCE</h3>
+        <p>No feeds match the filter criteria: <strong>${escapeHtml(state.topicFilter.toUpperCase())}</strong>.</p>
       </div>
     `;
   }
