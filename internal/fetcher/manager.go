@@ -23,23 +23,25 @@ type FetchResult struct {
 }
 
 type Manager struct {
-	cfg         *config.Config
-	tagger      *Tagger
-	cisaFetcher *CISAFetcher
-	rssFetcher  *RSSFetcher
-	tgFetcher   *TelegramFetcher
-	cache       *storage.Cache
+	cfg            *config.Config
+	tagger         *Tagger
+	cisaFetcher    *CISAFetcher
+	rssFetcher     *RSSFetcher
+	tgFetcher      *TelegramFetcher
+	twitterFetcher *TwitterFetcher
+	cache          *storage.Cache
 }
 
 func NewManager(cfg *config.Config, cache *storage.Cache) *Manager {
 	tagger := NewTagger(&cfg.Rules)
 	return &Manager{
-		cfg:         cfg,
-		tagger:      tagger,
-		cisaFetcher: NewCISAFetcher(cfg.RequestTimeout, tagger),
-		rssFetcher:  NewRSSFetcher(cfg.RequestTimeout, tagger),
-		tgFetcher:   NewTelegramFetcher(cfg.RequestTimeout, tagger),
-		cache:       cache,
+		cfg:            cfg,
+		tagger:         tagger,
+		cisaFetcher:    NewCISAFetcher(cfg.RequestTimeout, tagger),
+		rssFetcher:     NewRSSFetcher(cfg.RequestTimeout, tagger),
+		tgFetcher:      NewTelegramFetcher(cfg.RequestTimeout, tagger),
+		twitterFetcher: NewTwitterFetcher(cfg.RequestTimeout, tagger),
+		cache:          cache,
 	}
 }
 
@@ -49,6 +51,8 @@ func (m *Manager) fetchFeed(ctx context.Context, f config.FeedSource, pane model
 		return m.cisaFetcher.Fetch(ctx, f.URL, m.cfg.MaxItemsPerFeed)
 	case config.FeedTypeTelegram:
 		return m.tgFetcher.Fetch(ctx, f.Name, f.URL, pane, m.cfg.MaxItemsPerFeed)
+	case config.FeedTypeTwitter, "x":
+		return m.twitterFetcher.Fetch(ctx, f.Name, f.URL, pane, m.cfg.MaxItemsPerFeed)
 	default:
 		return m.rssFetcher.Fetch(ctx, f.Name, f.URL, pane, m.cfg.MaxItemsPerFeed)
 	}

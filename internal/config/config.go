@@ -15,6 +15,7 @@ const (
 	FeedTypeRSS      FeedType = "rss"
 	FeedTypeCISA     FeedType = "cisa"
 	FeedTypeTelegram FeedType = "telegram"
+	FeedTypeTwitter  FeedType = "twitter"
 )
 
 type FeedSource struct {
