@@ -1,36 +1,41 @@
 :root {
-  --bg-pitch: #090a0f;
-  --bg-surface: #0e121a;
-  --bg-card: #131722;
-  --bg-card-hover: #191f2e;
-  --bg-card-active: #20273a;
-  --bg-card-selected: #1c2333;
+  /* MongoDB Atlas & Modern Developer Cloud Dark Theme */
+  --bg-pitch: #001e2b;
+  --bg-surface: #061720;
+  --bg-card: #0c232e;
+  --bg-card-hover: #132f3e;
+  --bg-card-active: #193c4e;
+  --bg-card-selected: #163647;
+  
+  --mongo-green: #00ed64;
+  --mongo-green-dark: #00684a;
+  --mongo-green-glow: rgba(0, 237, 100, 0.2);
   
   --amber: #f59e0b;
   --amber-light: #fbbf24;
   --amber-dim: #92400e;
-  --amber-glow: rgba(245, 158, 11, 0.15);
+  --amber-glow: rgba(245, 158, 11, 0.16);
   
-  --cyan: #06b6d4;
-  --cyan-dim: #0e7490;
-  --cyan-glow: rgba(6, 182, 212, 0.15);
+  --cyan: #00e5ff;
+  --cyan-dim: #007a88;
+  --cyan-glow: rgba(0, 229, 255, 0.16);
   
-  --red-crit: #ef4444;
-  --red-glow: rgba(239, 68, 68, 0.18);
+  --red-crit: #ff3344;
+  --red-glow: rgba(255, 51, 68, 0.2);
   
   --magenta: #ec4899;
-  --magenta-glow: rgba(236, 72, 153, 0.18);
+  --magenta-glow: rgba(236, 72, 153, 0.2);
   
-  --green: #10b981;
-  --green-glow: rgba(16, 185, 129, 0.18);
+  --green: #00ed64;
+  --green-glow: rgba(0, 237, 100, 0.2);
   
-  --text-bright: #f8fafc;
-  --text-main: #cbd5e1;
-  --text-muted: #64748b;
-  --text-dim: #475569;
-  --border-color: rgba(255, 255, 255, 0.07);
+  --text-bright: #ffffff;
+  --text-main: #d0dbe5;
+  --text-muted: #798e9c;
+  --text-dim: #4d6677;
+  --border-color: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-highlight: #f59e0b;
+  --border-highlight: #00ed64;
   
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -112,17 +117,19 @@ kbd {
 }
 
 .brand-logo {
-  color: var(--amber);
-  font-size: 1.2rem;
+  color: var(--mongo-green);
+  font-size: 1.25rem;
 }
 
 .brand-tag {
-  background: var(--amber-dim);
-  color: #fff;
+  background: rgba(0, 237, 100, 0.12);
+  border: 1px solid var(--mongo-green);
+  color: var(--mongo-green);
   font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 2px;
+  padding: 2px 8px;
+  border-radius: 4px;
   font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .clock-display {
@@ -231,8 +238,8 @@ kbd {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -242,18 +249,20 @@ kbd {
 
 .btn-action:hover {
   background: var(--bg-card-hover);
-  border-color: var(--amber);
-  color: var(--amber);
+  border-color: var(--mongo-green);
+  color: var(--mongo-green);
 }
 
 .btn-action.sync-btn {
-  background: #171d27;
-  border-color: var(--amber-dim);
-  color: var(--amber);
+  background: rgba(0, 237, 100, 0.1);
+  border-color: var(--mongo-green);
+  color: var(--mongo-green);
 }
 .btn-action.sync-btn:hover {
-  background: var(--amber);
-  color: #000;
+  background: var(--mongo-green);
+  color: #001e2b;
+  font-weight: 700;
+  box-shadow: 0 0 12px var(--mongo-green-glow);
 }
 
 /* 2. REAL-TIME MARKET TICKER & FLASH WIRE */
@@ -296,9 +305,9 @@ kbd {
 .wire-ticker-content {
   display: inline-flex;
   align-items: center;
-  gap: 24px;
+  gap: 32px;
   white-space: nowrap;
-  animation: ticker-slide 45s linear infinite;
+  animation: ticker-slide 160s linear infinite;
 }
 
 .wire-ticker-content:hover {
@@ -399,14 +408,14 @@ kbd {
 }
 
 .view-tab {
-  background: var(--bg-pitch);
+  background: var(--bg-surface);
   border: 1px solid var(--border-color);
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -416,29 +425,29 @@ kbd {
 
 .view-tab:hover {
   background: var(--bg-card);
-  color: var(--text-main);
-  border-color: #2e3748;
+  color: var(--text-bright);
+  border-color: rgba(0, 237, 100, 0.3);
 }
 
 .view-tab.active {
   background: var(--bg-card-active);
-  border-color: var(--amber);
-  color: var(--amber);
+  border-color: var(--mongo-green);
+  color: var(--mongo-green);
   font-weight: 700;
-  box-shadow: 0 0 10px var(--amber-glow);
+  box-shadow: 0 0 12px var(--mongo-green-glow);
 }
 
 .tab-count {
-  background: #1c2331;
+  background: #112733;
   color: var(--text-main);
   font-size: 0.7rem;
-  padding: 1px 5px;
-  border-radius: 8px;
+  padding: 1px 6px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
 }
 .view-tab.active .tab-count {
-  background: var(--amber);
-  color: #000;
+  background: var(--mongo-green);
+  color: #001e2b;
   font-weight: 700;
 }
 
@@ -798,30 +807,31 @@ kbd {
 .feed-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .feed-card:hover {
   background: var(--bg-card-hover);
-  border-color: var(--amber-dim);
+  border-color: rgba(0, 237, 100, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-1px);
 }
 
 .feed-card.active {
-  border-color: var(--amber) !important;
+  border-color: var(--mongo-green) !important;
   background: var(--bg-card-selected) !important;
-  box-shadow: 0 0 10px var(--amber-glow);
+  box-shadow: 0 0 16px var(--mongo-green-glow);
 }
 
 .feed-card.unread {
-  border-left: 3px solid var(--amber);
+  border-left: 3px solid var(--mongo-green);
 }
 .feed-card.unread.crit {
   border-left: 3px solid var(--red-crit);
@@ -1045,22 +1055,23 @@ kbd {
 }
 
 .btn-open-link {
-  background: var(--amber);
-  color: #000;
+  background: var(--mongo-green);
+  color: #001e2b;
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 0.8rem;
-  padding: 7px 14px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 6px;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   transition: all 0.15s ease;
+  box-shadow: 0 0 10px var(--mongo-green-glow);
 }
 .btn-open-link:hover {
-  background: #ffc233;
-  box-shadow: 0 0 10px var(--amber-glow);
+  background: #33f083;
+  box-shadow: 0 0 16px var(--mongo-green-glow);
 }
 
 /* Empty State */

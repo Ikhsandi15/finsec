@@ -367,13 +367,13 @@ func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
 	var (
 		usdidr float64
 		btcusd float64
-		source = "Yahoo Finance (Refinitiv Spot FX)"
+		source = "Interbank Spot FX"
 	)
 
-	// Fetch USD/IDR from Yahoo Finance Chart API (exact spot rate provider used by Google)
+	// 1. Fetch USD/IDR from Yahoo Finance Chart API (Interbank Spot Rate)
 	req, err := http.NewRequest(http.MethodGet, "https://query1.finance.yahoo.com/v8/finance/chart/IDR=X", nil)
 	if err == nil {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode == http.StatusOK {
 			var yfResp struct {
@@ -388,20 +388,21 @@ func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewDecoder(resp.Body).Decode(&yfResp); err == nil {
 				if len(yfResp.Chart.Result) > 0 && yfResp.Chart.Result[0].Meta.RegularMarketPrice > 0 {
 					usdidr = yfResp.Chart.Result[0].Meta.RegularMarketPrice
+					source = "Yahoo Finance (Refinitiv Spot FX)"
 				}
 			}
 			resp.Body.Close()
 		}
 	}
 
-	// Fallback to Open Exchange Rates if Yahoo blocked
+	// Fallback 1 to Open Exchange Rates
 	if usdidr == 0 {
 		resp, err := client.Get("https://open.er-api.com/v6/latest/USD")
 		if err == nil && resp.StatusCode == http.StatusOK {
 			var erResp struct {
 				Rates map[string]float64 `json:"rates"`
 			}
-			if err := json.NewDecoder(resp.Body).Decode(&erResp); err == nil {
+			if err := json.NewDecoder(resp.Body).Decode(&erResp); err == nil && erResp.Rates["IDR"] > 0 {
 				usdidr = erResp.Rates["IDR"]
 				source = "Open Exchange Rates API"
 			}
@@ -409,18 +410,71 @@ func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch BTC/USD from Binance
-	resp, err := client.Get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
-	if err == nil && resp.StatusCode == http.StatusOK {
-		var binanceResp struct {
-			Price string `json:"price"`
+	// Fallback 2 to ExchangeRate-API
+	if usdidr == 0 {
+		resp, err := client.Get("https://api.exchangerate-api.com/v4/latest/USD")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var erResp struct {
+				Rates map[string]float64 `json:"rates"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&erResp); err == nil && erResp.Rates["IDR"] > 0 {
+				usdidr = erResp.Rates["IDR"]
+				source = "ExchangeRate-API"
+			}
+			resp.Body.Close()
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&binanceResp); err == nil {
-			var p float64
-			_, _ = fmt.Sscanf(binanceResp.Price, "%f", &p)
-			btcusd = p
+	}
+
+	// 2. Fetch BTC/USD from Coinbase (Official public API, NEVER blocked in Indonesia!)
+	reqCoinbase, err := http.NewRequest(http.MethodGet, "https://api.coinbase.com/v2/prices/BTC-USD/spot", nil)
+	if err == nil {
+		reqCoinbase.Header.Set("User-Agent", "Mozilla/5.0 finsec-term/1.0")
+		resp, err := client.Do(reqCoinbase)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var cbResp struct {
+				Data struct {
+					Amount string `json:"amount"`
+				} `json:"data"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&cbResp); err == nil {
+				var p float64
+				_, _ = fmt.Sscanf(cbResp.Data.Amount, "%f", &p)
+				if p > 0 {
+					btcusd = p
+				}
+			}
+			resp.Body.Close()
 		}
-		resp.Body.Close()
+	}
+
+	// Fallback BTC to CryptoCompare (Official free API, no block in ID)
+	if btcusd == 0 {
+		resp, err := client.Get("https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var ccResp struct {
+				USD float64 `json:"USD"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&ccResp); err == nil && ccResp.USD > 0 {
+				btcusd = ccResp.USD
+			}
+			resp.Body.Close()
+		}
+	}
+
+	// Fallback BTC to CoinGecko
+	if btcusd == 0 {
+		resp, err := client.Get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			var cgResp struct {
+				Bitcoin struct {
+					USD float64 `json:"usd"`
+				} `json:"bitcoin"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&cgResp); err == nil && cgResp.Bitcoin.USD > 0 {
+				btcusd = cgResp.Bitcoin.USD
+			}
+			resp.Body.Close()
+		}
 	}
 
 	if usdidr > 0 {
