@@ -370,28 +370,55 @@ func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
 		source = "Interbank Spot FX"
 	)
 
-	// 1. Fetch USD/IDR from Yahoo Finance Chart API (Interbank Spot Rate)
-	req, err := http.NewRequest(http.MethodGet, "https://query1.finance.yahoo.com/v8/finance/chart/IDR=X", nil)
+	// 1. Fetch USD/IDR from Coinbase Official FX Rates (Same reliable provider as BTC!)
+	reqCoinbaseFX, err := http.NewRequest(http.MethodGet, "https://api.coinbase.com/v2/exchange-rates?currency=USD", nil)
 	if err == nil {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-		resp, err := client.Do(req)
+		reqCoinbaseFX.Header.Set("User-Agent", "Mozilla/5.0 finsec-term/1.0")
+		resp, err := client.Do(reqCoinbaseFX)
 		if err == nil && resp.StatusCode == http.StatusOK {
-			var yfResp struct {
-				Chart struct {
-					Result []struct {
-						Meta struct {
-							RegularMarketPrice float64 `json:"regularMarketPrice"`
-						} `json:"meta"`
-					} `json:"result"`
-				} `json:"chart"`
+			var cbFXResp struct {
+				Data struct {
+					Rates map[string]string `json:"rates"`
+				} `json:"data"`
 			}
-			if err := json.NewDecoder(resp.Body).Decode(&yfResp); err == nil {
-				if len(yfResp.Chart.Result) > 0 && yfResp.Chart.Result[0].Meta.RegularMarketPrice > 0 {
-					usdidr = yfResp.Chart.Result[0].Meta.RegularMarketPrice
-					source = "Yahoo Finance (Refinitiv Spot FX)"
+			if err := json.NewDecoder(resp.Body).Decode(&cbFXResp); err == nil {
+				if idrStr, ok := cbFXResp.Data.Rates["IDR"]; ok {
+					var r float64
+					_, _ = fmt.Sscanf(idrStr, "%f", &r)
+					if r > 0 {
+						usdidr = r
+						source = "Coinbase FX Spot"
+					}
 				}
 			}
 			resp.Body.Close()
+		}
+	}
+
+	// Fallback 1: Yahoo Finance Chart API (Interbank Spot Rate)
+	if usdidr == 0 {
+		req, err := http.NewRequest(http.MethodGet, "https://query1.finance.yahoo.com/v8/finance/chart/IDR=X", nil)
+		if err == nil {
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+			resp, err := client.Do(req)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				var yfResp struct {
+					Chart struct {
+						Result []struct {
+							Meta struct {
+								RegularMarketPrice float64 `json:"regularMarketPrice"`
+							} `json:"meta"`
+						} `json:"result"`
+					} `json:"chart"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&yfResp); err == nil {
+					if len(yfResp.Chart.Result) > 0 && yfResp.Chart.Result[0].Meta.RegularMarketPrice > 0 {
+						usdidr = yfResp.Chart.Result[0].Meta.RegularMarketPrice
+						source = "Yahoo Finance (Refinitiv Spot FX)"
+					}
+				}
+				resp.Body.Close()
+			}
 		}
 	}
 
