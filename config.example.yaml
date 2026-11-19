@@ -4,6 +4,11 @@ request_timeout: 14s
 max_items_per_feed: 60
 cache_file: ~/.finsec-term/cache.json
 
+# Fixer.io Configuration (Free tier: 100 req/month, cached for 72h / 3 days = ~10 req/month)
+fixer:
+  api_key: "" # Masukkan Fixer API key kamu di sini (opsional)
+  cache_duration: 72h
+
 feeds:
   pane1_cve:
     - name: "CISA KEV"

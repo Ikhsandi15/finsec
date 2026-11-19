@@ -105,6 +105,18 @@ async function fetchLiveRates() {
       if (data && data.usdidr > 0) {
         elRateUsdIdr.textContent = `Rp ${Math.round(data.usdidr).toLocaleString('id-ID')}`;
         elRateUsdIdr.title = `Sumber: ${data.source}`;
+        const tagEl = document.getElementById('rate-usdidr-tag');
+        if (tagEl) {
+          if (data.source && data.source.toLowerCase().includes('fixer')) {
+            tagEl.textContent = 'Fixer.io';
+            tagEl.className = 'ticker-source-tag tag-fixer';
+            tagEl.title = data.source;
+          } else {
+            tagEl.textContent = 'Spot FX';
+            tagEl.className = 'ticker-source-tag tag-fallback';
+            tagEl.title = data.source;
+          }
+        }
       }
       if (data && data.btcusd > 0) {
         elRateBtcUsd.textContent = `$${Math.round(data.btcusd).toLocaleString('en-US')}`;

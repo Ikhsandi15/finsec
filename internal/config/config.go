@@ -29,10 +29,15 @@ type FeedsConfig struct {
 }
 
 type RulesConfig struct {
-	StackKeywords    []string `yaml:"stack_keywords"`
-	IDMacroKeywords  []string `yaml:"id_macro_keywords"`
-	IDPolKeywords    []string `yaml:"id_pol_keywords"`
-	GlobalKeywords   []string `yaml:"global_keywords"`
+	StackKeywords   []string `yaml:"stack_keywords"`
+	IDMacroKeywords []string `yaml:"id_macro_keywords"`
+	IDPolKeywords   []string `yaml:"id_pol_keywords"`
+	GlobalKeywords  []string `yaml:"global_keywords"`
+}
+
+type FixerConfig struct {
+	APIKey        string        `yaml:"api_key"`
+	CacheDuration time.Duration `yaml:"cache_duration"`
 }
 
 type Config struct {
@@ -40,6 +45,7 @@ type Config struct {
 	RequestTimeout  time.Duration `yaml:"request_timeout"`
 	MaxItemsPerFeed int           `yaml:"max_items_per_feed"`
 	CacheFile       string        `yaml:"cache_file"`
+	Fixer           FixerConfig   `yaml:"fixer"`
 	Feeds           FeedsConfig   `yaml:"feeds"`
 	Rules           RulesConfig   `yaml:"rules"`
 }
@@ -50,6 +56,10 @@ func DefaultConfig() *Config {
 		RequestTimeout:  14 * time.Second,
 		MaxItemsPerFeed: 60,
 		CacheFile:       "~/.finsec-term/cache.json",
+		Fixer: FixerConfig{
+			APIKey:        "4b779965896935e4b8bd63e01918be6c",
+			CacheDuration: 72 * time.Hour,
+		},
 		Feeds: FeedsConfig{
 			Pane1CVE: []FeedSource{
 				{
@@ -181,6 +191,17 @@ func LoadConfig(filePath string) (*Config, error) {
 	data, err := os.ReadFile(expandedPath)
 	if err != nil {
 		if os.IsNotExist(err) {
+			if filePath == "config.yaml" {
+				// Cek jika ada typo file config..yaml atau config.example.yaml
+				if typoData, typoErr := os.ReadFile("config..yaml"); typoErr == nil {
+					_ = yaml.Unmarshal(typoData, cfg)
+					return cfg, nil
+				}
+				if exData, exErr := os.ReadFile("config.example.yaml"); exErr == nil {
+					_ = yaml.Unmarshal(exData, cfg)
+					return cfg, nil
+				}
+			}
 			return cfg, nil
 		}
 		return nil, err
@@ -188,6 +209,16 @@ func LoadConfig(filePath string) (*Config, error) {
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
+	}
+
+	// Fallback jika API key kosong di config.yaml tapi ada di config..yaml
+	if cfg.Fixer.APIKey == "" {
+		if typoData, typoErr := os.ReadFile("config..yaml"); typoErr == nil {
+			var typoCfg Config
+			if err := yaml.Unmarshal(typoData, &typoCfg); err == nil && typoCfg.Fixer.APIKey != "" {
+				cfg.Fixer.APIKey = typoCfg.Fixer.APIKey
+			}
+		}
 	}
 
 	return cfg, nil

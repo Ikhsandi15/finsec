@@ -384,6 +384,26 @@ kbd {
 .ticker-item .val.cyan { color: var(--cyan); font-weight: 700; }
 .ticker-item .val.green { color: var(--green); font-weight: 700; }
 
+.ticker-source-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+  display: inline-block;
+}
+.ticker-source-tag.tag-fixer {
+  background: rgba(0, 237, 100, 0.12);
+  color: #00ed64;
+  border: 1px solid rgba(0, 237, 100, 0.3);
+}
+.ticker-source-tag.tag-fallback {
+  background: rgba(254, 189, 49, 0.12);
+  color: #febd31;
+  border: 1px solid rgba(254, 189, 49, 0.3);
+}
+
 .ticker-divider {
   width: 1px;
   height: 16px;

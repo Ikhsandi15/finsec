@@ -25,3 +25,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# User config and private cache
+config.yaml
+.fixer_cache.json

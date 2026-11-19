@@ -26,6 +26,7 @@ type Server struct {
 	cfg        *config.Config
 	manager    *fetcher.Manager
 	cache      *storage.Cache
+	fixerMgr   *storage.FixerManager
 	mu         sync.RWMutex
 	lastResult *fetcher.FetchResult
 	isSyncing  bool
@@ -51,11 +52,17 @@ type FeedsResponse struct {
 
 func NewServer(cfg *config.Config, manager *fetcher.Manager, cache *storage.Cache) *Server {
 	return &Server{
-		cfg:     cfg,
-		manager: manager,
-		cache:   cache,
-		clients: make(map[SSEClient]bool),
+		cfg:      cfg,
+		manager:  manager,
+		cache:    cache,
+		fixerMgr: storage.NewFixerManager(cfg.Fixer.APIKey, cfg.Fixer.CacheDuration),
+		clients:  make(map[SSEClient]bool),
 	}
+}
+
+// FixerManager returns the underlying FixerManager instance
+func (s *Server) FixerManager() *storage.FixerManager {
+	return s.fixerMgr
 }
 
 // StartBackgroundSync periodically fetches updates
@@ -370,28 +377,38 @@ func (s *Server) handleMarketRates(w http.ResponseWriter, r *http.Request) {
 		source = "Interbank Spot FX"
 	)
 
-	// 1. Fetch USD/IDR from Coinbase Official FX Rates (Same reliable provider as BTC!)
-	reqCoinbaseFX, err := http.NewRequest(http.MethodGet, "https://api.coinbase.com/v2/exchange-rates?currency=USD", nil)
-	if err == nil {
-		reqCoinbaseFX.Header.Set("User-Agent", "Mozilla/5.0 finsec-term/1.0")
-		resp, err := client.Do(reqCoinbaseFX)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			var cbFXResp struct {
-				Data struct {
-					Rates map[string]string `json:"rates"`
-				} `json:"data"`
-			}
-			if err := json.NewDecoder(resp.Body).Decode(&cbFXResp); err == nil {
-				if idrStr, ok := cbFXResp.Data.Rates["IDR"]; ok {
-					var r float64
-					_, _ = fmt.Sscanf(idrStr, "%f", &r)
-					if r > 0 {
-						usdidr = r
-						source = "Coinbase FX Spot"
+	// 0. Primary: Fixer.io with 3-Day Persistent Local Cache (Quota Saver)
+	if s.fixerMgr != nil {
+		if rate, status, err := s.fixerMgr.GetRate(); err == nil && rate > 0 {
+			usdidr = rate
+			source = status
+		}
+	}
+
+	// 1. Fallback: Coinbase Official FX Rates
+	if usdidr == 0 {
+		reqCoinbaseFX, err := http.NewRequest(http.MethodGet, "https://api.coinbase.com/v2/exchange-rates?currency=USD", nil)
+		if err == nil {
+			reqCoinbaseFX.Header.Set("User-Agent", "Mozilla/5.0 finsec-term/1.0")
+			resp, err := client.Do(reqCoinbaseFX)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				var cbFXResp struct {
+					Data struct {
+						Rates map[string]string `json:"rates"`
+					} `json:"data"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&cbFXResp); err == nil {
+					if idrStr, ok := cbFXResp.Data.Rates["IDR"]; ok {
+						var r float64
+						_, _ = fmt.Sscanf(idrStr, "%f", &r)
+						if r > 0 {
+							usdidr = r
+							source = "Coinbase FX Spot"
+						}
 					}
 				}
+				resp.Body.Close()
 			}
-			resp.Body.Close()
 		}
 	}
 
