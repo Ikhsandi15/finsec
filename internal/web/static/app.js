@@ -206,11 +206,12 @@ function renderBadges(badges, cves) {
     badges.forEach(b => {
       let cls = 'tag-badge ';
       if (b === 'STACK-CRIT') cls += 'tag-stack-crit';
+      else if (b === 'TECH-AI') cls += 'tag-tech-ai';
       else if (b === 'ID-MACRO') cls += 'tag-id-macro';
       else if (b === 'ID-POL') cls += 'tag-id-pol';
       else if (b === 'GLOBAL-MKT') cls += 'tag-global-mkt';
       else if (b === 'CVE') cls += 'tag-cve';
-      else cls += 'tag-cve';
+      else cls += 'tag-tech-ai';
       html += `<span class="${cls}">${escapeHtml(b)}</span>`;
     });
   }
@@ -226,13 +227,13 @@ function renderBadges(badges, cves) {
 const topicPresets = {
   pane1: [
     { id: 'all', label: 'SEMUA RADAR' },
-    { id: 'cisa', label: 'CISA KEV' },
-    { id: 'stack-crit', label: 'STACK-CRIT' },
-    { id: 'rce', label: 'RCE / ZERO-DAY' },
-    { id: 'nginx', label: 'NGINX' },
-    { id: 'php', label: 'PHP' },
-    { id: 'golang', label: 'GOLANG / GO' },
-    { id: 'redis', label: 'REDIS / DB' },
+    { id: 'ai', label: '🤖 AI & BIG TECH' },
+    { id: 'dev', label: '⚡ DEVELOPER / GITHUB' },
+    { id: 'cisa', label: '🛡️ CISA KEV' },
+    { id: 'stack-crit', label: '🔥 STACK-CRIT' },
+    { id: 'rce', label: '🚨 RCE / 0-DAY' },
+    { id: 'golang', label: '🐹 GOLANG' },
+    { id: 'infra', label: '☁️ CLOUD / DB' },
   ],
   pane2: [
     { id: 'all', label: 'SEMUA MAKRO' },
@@ -259,13 +260,13 @@ function matchesTopic(item, topic) {
   const text = (item.title + ' ' + (item.description || '') + ' ' + (item.source || '')).toLowerCase();
   switch (topic) {
     // Pane 1
+    case 'ai': return (item.badges && item.badges.includes('TECH-AI')) || text.includes('ai') || text.includes('artificial intelligence') || text.includes('llm') || text.includes('openai') || text.includes('anthropic') || text.includes('nvidia') || text.includes('gpu') || text.includes('claude') || text.includes('gemini') || text.includes('deepseek') || text.includes('chip') || text.includes('semiconductor');
+    case 'dev': return text.includes('github') || text.includes('developer') || text.includes('framework') || text.includes('rust') || text.includes('python') || text.includes('docker') || text.includes('kubernetes') || text.includes('open source') || text.includes('release') || text.includes('vulnerability');
     case 'cisa': return item.is_cisa || item.source.toLowerCase().includes('cisa');
     case 'stack-crit': return item.badges && item.badges.includes('STACK-CRIT');
     case 'rce': return text.includes('rce') || text.includes('remote code execution') || text.includes('zero-day');
-    case 'nginx': return text.includes('nginx');
-    case 'php': return text.includes('php');
     case 'golang': return text.includes('golang') || text.includes('go ');
-    case 'redis': return text.includes('redis') || text.includes('postgres') || text.includes('database');
+    case 'infra': return text.includes('nginx') || text.includes('redis') || text.includes('postgres') || text.includes('cloud') || text.includes('database') || text.includes('server');
 
     // Pane 2
     case 'fed': return text.includes('fed') || text.includes('fomc') || text.includes('powell') || text.includes('interest rate');
@@ -412,8 +413,8 @@ function renderFocusMode() {
 
   if (state.currentView === 'pane1') {
     targetItems = state.filtered1;
-    paneName = '[1] CVE & TECH STACK RADAR';
-    paneDesc = 'Pemantauan Kerentanan CISA KEV, RCE, dan Infrastruktur Server';
+    paneName = '[1] TECH, AI & CYBER RADAR';
+    paneDesc = 'Pemantauan Perkembangan AI, Big Tech, Kerentanan CISA KEV & Cloud Infrastructure';
     paneNum = 1;
   } else if (state.currentView === 'pane2') {
     targetItems = state.filtered2;

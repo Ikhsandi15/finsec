@@ -30,6 +30,7 @@ type FeedsConfig struct {
 
 type RulesConfig struct {
 	StackKeywords   []string `yaml:"stack_keywords"`
+	TechKeywords    []string `yaml:"tech_keywords"`
 	IDMacroKeywords []string `yaml:"id_macro_keywords"`
 	IDPolKeywords   []string `yaml:"id_pol_keywords"`
 	GlobalKeywords  []string `yaml:"global_keywords"`
@@ -85,6 +86,31 @@ func DefaultConfig() *Config {
 				{
 					Name: "Google Cloud Sec",
 					URL:  "https://cloudblog.withgoogle.com/products/identity-security/rss/",
+					Type: FeedTypeRSS,
+				},
+				{
+					Name: "The Verge Tech",
+					URL:  "https://www.theverge.com/rss/index.xml",
+					Type: FeedTypeRSS,
+				},
+				{
+					Name: "Ars Technica",
+					URL:  "https://feeds.arstechnica.com/arstechnica/index",
+					Type: FeedTypeRSS,
+				},
+				{
+					Name: "Hacker News",
+					URL:  "https://news.ycombinator.com/rss",
+					Type: FeedTypeRSS,
+				},
+				{
+					Name: "TechCrunch",
+					URL:  "https://techcrunch.com/feed/",
+					Type: FeedTypeRSS,
+				},
+				{
+					Name: "GitHub Blog",
+					URL:  "https://github.blog/feed/",
 					Type: FeedTypeRSS,
 				},
 			},
@@ -149,6 +175,13 @@ func DefaultConfig() *Config {
 				"Postgres", "Redis", "RabbitMQ", "Google Cloud", "GCP", "Brotli",
 				"gRPC", "RCE", "Remote Code Execution", "Zero-Day", "0-day", "CVSS",
 				"Privilege Escalation", "SQL Injection", "Authentication Bypass",
+			},
+			TechKeywords: []string{
+				"AI", "Artificial Intelligence", "LLM", "OpenAI", "Anthropic", "Claude",
+				"ChatGPT", "Gemini", "DeepSeek", "Nvidia", "GPU", "Machine Learning",
+				"Semiconductor", "Apple", "Microsoft", "Google", "Meta", "Quantum",
+				"Framework", "Rust", "Python", "Kubernetes", "Docker", "Open Source",
+				"Architecture", "Robotics", "Hardware", "Linux", "TypeScript", "React",
 			},
 			IDMacroKeywords: []string{
 				"Rupiah", "IDR", "Bank Indonesia", "BI Rate", "IHSG", "SBN", "OJK",

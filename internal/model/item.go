@@ -20,7 +20,7 @@ const (
 func (p PaneID) String() string {
 	switch p {
 	case PaneCVE:
-		return "CVE & STACK RADAR"
+		return "TECH, AI & CYBER RADAR"
 	case PaneGlobalMacro:
 		return "GLOBAL MACRO & GEOPOLITICS"
 	case PaneIDMacro:
@@ -48,6 +48,7 @@ const (
 	BadgeIDPol     = "ID-POL"
 	BadgeGlobalMkt = "GLOBAL-MKT"
 	BadgeCVE       = "CVE"
+	BadgeTechAI    = "TECH-AI"
 )
 
 type FeedItem struct {

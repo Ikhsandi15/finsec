@@ -202,6 +202,22 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 		}
 	}
 
+	// Check Tech & AI
+	techMatched := false
+	for _, kw := range t.rules.TechKeywords {
+		if containsWord(combinedText, kw) {
+			techMatched = true
+			score += 30
+			break
+		}
+	}
+	if techMatched {
+		badgeMap[model.BadgeTechAI] = true
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityMedium
+		}
+	}
+
 	if len(item.CVEs) > 0 {
 		badgeMap[model.BadgeCVE] = true
 		score += 20
@@ -231,6 +247,9 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 	}
 	if badgeMap[model.BadgeGlobalMkt] {
 		badges = append(badges, model.BadgeGlobalMkt)
+	}
+	if badgeMap[model.BadgeTechAI] {
+		badges = append(badges, model.BadgeTechAI)
 	}
 
 	item.Badges = badges

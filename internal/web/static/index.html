@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.0.0">
+  <link rel="stylesheet" href="style.css?v=3.2.0">
 </head>
 <body>
 
@@ -38,14 +38,14 @@
     <div class="header-controls">
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" id="search-input" placeholder="Search CVE, keyword, source...">
+        <input type="text" id="search-input" placeholder="Search CVE, tech, keyword, source...">
         <span class="search-shortcut">/</span>
       </div>
       <button class="btn-action" id="btn-sort" title="Toggle Sort Order">
         <span id="sort-icon">⏱️</span> <span id="sort-text">LATEST FIRST</span>
       </button>
       <button class="btn-action sync-btn" id="btn-sync" title="Shortcut: R">
-        <span class="btn-icon">↻</span> SYNC NOW
+        <span class="btn-icon">↺</span> SYNC NOW
       </button>
       <button class="btn-action" id="btn-mark-all" title="Shortcut: M">
         <span>✓</span> MARK READ
@@ -78,7 +78,7 @@
         <span class="tab-icon">⊞</span> ALL 3-PANE GRID <span class="tab-hotkey">0</span>
       </button>
       <button class="view-tab" data-view="pane1" title="Shortcut: 1">
-        <span class="tab-icon">🛡️</span> [1] CVE & TECH RADAR <span class="tab-count" id="tab-count-1">0</span> <span class="tab-hotkey">1</span>
+        <span class="tab-icon">⚡</span> [1] TECH, AI & CYBER <span class="tab-count" id="tab-count-1">0</span> <span class="tab-hotkey">1</span>
       </button>
       <button class="view-tab" data-view="pane2" title="Shortcut: 2">
         <span class="tab-icon">🌐</span> [2] GLOBAL MACRO <span class="tab-count" id="tab-count-2">0</span> <span class="tab-hotkey">2</span>
@@ -97,12 +97,12 @@
     
     <!-- 1. GRID VIEW MODE (3 COLUMNS) -->
     <main class="main-grid" id="view-grid">
-      <!-- PANE 1: CVE & TECH RADAR -->
+      <!-- PANE 1: TECH, AI & CYBER RADAR -->
       <section class="pane-column" id="pane-1">
         <div class="pane-header">
           <div class="pane-title-wrap">
             <span class="pane-num">[1]</span>
-            <span class="pane-title">CVE & STACK RADAR</span>
+            <span class="pane-title">TECH, AI & CYBER RADAR</span>
             <span class="pane-count" id="count-pane1">0</span>
           </div>
           <button class="btn-focus-pane" data-target="pane1" title="Fokus ke Pane Ini">⛶ FOKUS</button>
@@ -144,8 +144,8 @@
       <div class="focus-master-pane">
         <div class="focus-pane-header">
           <div class="focus-title-wrap">
-            <span class="focus-title-badge" id="focus-pane-badge">[3] ID MARKET</span>
-            <span class="focus-title-desc" id="focus-pane-desc">Market & Macro Intelligence</span>
+            <span class="focus-title-badge" id="focus-pane-badge">[1] TECH, AI & CYBER</span>
+            <span class="focus-title-desc" id="focus-pane-desc">Perkembangan AI, Big Tech, Kerentanan & Cloud</span>
           </div>
           <div class="focus-filter-pills" id="focus-topic-pills">
             <!-- Dynamic topic filter pills -->
@@ -200,6 +200,6 @@
     </div>
   </aside>
 
-  <script src="app.js?v=2.0.0"></script>
+  <script src="app.js?v=3.2.0"></script>
 </body>
 </html>
