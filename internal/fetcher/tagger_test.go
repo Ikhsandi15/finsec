@@ -181,4 +181,21 @@ func TestTagger_TagAndScore(t *testing.T) {
 	if !hasICW {
 		t.Errorf("expected %s badge, got %v", model.BadgeICW, item8.Badges)
 	}
+
+	item9 := model.FeedItem{
+		Source:      "Dark Web Informer",
+		Title:       "France Travail Database Sale Claim: 2.6M records leaked",
+		Description: "Actor cauchyx claims to be selling database.",
+	}
+	tagger.TagAndScore(&item9)
+
+	hasDarkWeb := false
+	for _, b := range item9.Badges {
+		if b == model.BadgeDarkWeb {
+			hasDarkWeb = true
+		}
+	}
+	if !hasDarkWeb {
+		t.Errorf("expected %s badge, got %v", model.BadgeDarkWeb, item9.Badges)
+	}
 }

@@ -56,6 +56,7 @@ const (
 	BadgeCVEDotNow = "X: @cvedotnow"
 	BadgeCyberNews = "X: @The_Cyber_News"
 	BadgeGithubPrj = "X: @GithubProjects"
+	BadgeDarkWeb   = "X: @DarkWebInformer"
 )
 
 type FeedItem struct {

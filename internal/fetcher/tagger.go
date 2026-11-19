@@ -276,6 +276,14 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 		}
 	}
 
+	if strings.Contains(srcLower, "dark web informer") || strings.Contains(srcLower, "darkwebinformer") || strings.Contains(textLower, "darkwebinformer") || strings.Contains(textLower, "@darkwebinformer") {
+		badgeMap[model.BadgeDarkWeb] = true
+		score += 35
+		if item.Severity == "" || item.Severity == model.SeverityInfo {
+			item.Severity = model.SeverityHigh
+		}
+	}
+
 	// Default severity if none assigned
 	if item.Severity == "" {
 		item.Severity = model.SeverityInfo
@@ -291,6 +299,9 @@ func (t *Tagger) TagAndScore(item *model.FeedItem) {
 	}
 	if badgeMap[model.BadgeZachXBT] {
 		badges = append(badges, model.BadgeZachXBT)
+	}
+	if badgeMap[model.BadgeDarkWeb] {
+		badges = append(badges, model.BadgeDarkWeb)
 	}
 	if badgeMap[model.BadgeICW] {
 		badges = append(badges, model.BadgeICW)
