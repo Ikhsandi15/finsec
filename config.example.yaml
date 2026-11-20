@@ -41,8 +41,29 @@ feeds:
     - name: "GitHub Blog"
       url: "https://github.blog/feed/"
       type: "rss"
+    - name: "Dark Reading Threat Intel"
+      url: "https://www.darkreading.com/rss.xml"
+      type: "rss"
+    - name: "Dark Web Informer"
+      url: "https://darkwebinformer.com/rss/"
+      type: "rss"
+    - name: "X: The Cyber News"
+      url: "https://x.com/The_Cyber_News"
+      type: "twitter"
+    - name: "X: IntCyberDigest"
+      url: "https://x.com/IntCyberDigest"
+      type: "twitter"
+    - name: "BBC Technology"
+      url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
+      type: "rss"
 
   pane2_global_macro:
+    - name: "BBC World News"
+      url: "https://feeds.bbci.co.uk/news/world/rss.xml"
+      type: "rss"
+    - name: "BBC Business"
+      url: "https://feeds.bbci.co.uk/news/business/rss.xml"
+      type: "rss"
     - name: "CNBC Markets"
       url: "https://search.cnbc.com/rs/search/view.html?partnerId=2000&keywords=markets&sort=date&type=all&output=rss"
       type: "rss"
@@ -58,6 +79,9 @@ feeds:
     - name: "CoinDesk"
       url: "https://www.coindesk.com/arc/outboundfeeds/rss/"
       type: "rss"
+    - name: "ZachXBT On-Chain Intel"
+      url: "https://t.me/s/zachxbt"
+      type: "telegram"
 
   pane3_id_macro:
     - name: "CNBC ID Market"
@@ -75,6 +99,12 @@ feeds:
     - name: "Kontan Investasi"
       url: "https://rss.kontan.co.id/news/investasi"
       type: "rss"
+    - name: "Antara Hukum & Korupsi"
+      url: "https://www.antaranews.com/rss/hukum.xml"
+      type: "rss"
+    - name: "X: ICW Antikorupsi"
+      url: "https://x.com/antikorupsi"
+      type: "twitter"
 
 rules:
   stack_keywords:

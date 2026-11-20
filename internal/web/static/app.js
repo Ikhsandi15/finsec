@@ -104,8 +104,11 @@ updateClocks();
 // 1. REAL LIVE FOREX & CRYPTO QUOTES (FROM GO BACKEND / YAHOO FINANCE & BINANCE)
 async function fetchLiveRates() {
   try {
-    const res = await fetch('/api/rates');
-    if (res.ok) {
+    let res = await fetch('/api/rates').catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch('./data/rates.json').catch(() => null);
+    }
+    if (res && res.ok) {
       const data = await res.json();
       if (data && data.usdidr > 0) {
         elRateUsdIdr.textContent = `Rp ${Math.round(data.usdidr).toLocaleString('id-ID')}`;
@@ -530,11 +533,13 @@ function selectItem(id, paneNum, openDrawerInGrid = true) {
   // Mark as read in state & backend
   if (!item.is_read) {
     item.is_read = true;
+    markLocalRead(item.id);
+    if (state.stats.unread_count > 0) state.stats.unread_count--;
     fetch('/api/read', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: item.id }),
-    }).catch(console.error);
+    }).catch(() => {});
   }
 
   if (state.currentView === 'grid') {
@@ -708,12 +713,40 @@ document.querySelectorAll('.btn-focus-pane').forEach(btn => {
   });
 });
 
-// API Calls
+// Local persistence for static hosting (GitHub Pages)
+function getLocalReadMap() {
+  try {
+    return JSON.parse(localStorage.getItem('finsec_read_items') || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+function markLocalRead(id) {
+  try {
+    const map = getLocalReadMap();
+    map[id] = true;
+    localStorage.setItem('finsec_read_items', JSON.stringify(map));
+  } catch (e) {}
+}
+function markAllLocalRead() {
+  try {
+    const map = getLocalReadMap();
+    [...state.pane1, ...state.pane2, ...state.pane3].forEach(it => { map[it.id] = true; });
+    localStorage.setItem('finsec_read_items', JSON.stringify(map));
+  } catch (e) {}
+}
+
+// API Calls (with automatic static fallback for GitHub Pages)
 async function fetchFeeds() {
   try {
-    const res = await fetch('/api/feeds');
-    const data = await res.json();
-    handleIncomingData(data);
+    let res = await fetch('/api/feeds').catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch('./data/feeds.json').catch(() => null);
+    }
+    if (res && res.ok) {
+      const data = await res.json();
+      handleIncomingData(data);
+    }
   } catch (err) {
     console.error('Failed to fetch feeds:', err);
   }
@@ -724,8 +757,21 @@ function handleIncomingData(data) {
   state.pane1 = data.pane1_cve || [];
   state.pane2 = data.pane2_global_macro || [];
   state.pane3 = data.pane3_id_macro || [];
+
+  // Merge locally stored read state
+  const readMap = getLocalReadMap();
+  let localUnreadCount = 0;
+  [...state.pane1, ...state.pane2, ...state.pane3].forEach(it => {
+    if (readMap[it.id]) {
+      it.is_read = true;
+    } else if (!it.is_read) {
+      localUnreadCount++;
+    }
+  });
+
   if (data.stats) {
     state.stats = data.stats;
+    state.stats.unread_count = localUnreadCount;
   }
   updateUI();
   updateBreakingWire();
@@ -734,15 +780,27 @@ function handleIncomingData(data) {
 function triggerSync() {
   state.stats.is_syncing = true;
   updateUI();
-  fetch('/api/refresh', { method: 'POST' }).catch(console.error);
+  fetch('/api/refresh', { method: 'POST' })
+    .catch(() => {})
+    .finally(() => {
+      setTimeout(() => {
+        fetchFeeds();
+        state.stats.is_syncing = false;
+        updateUI();
+      }, 800);
+    });
 }
 
 function markAllRead() {
+  markAllLocalRead();
+  [...state.pane1, ...state.pane2, ...state.pane3].forEach(it => { it.is_read = true; });
+  state.stats.unread_count = 0;
+  updateUI();
   fetch('/api/read', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ all: true, pane: 0 }),
-  }).then(fetchFeeds).catch(console.error);
+  }).catch(() => {});
 }
 
 elBtnSync.addEventListener('click', triggerSync);
