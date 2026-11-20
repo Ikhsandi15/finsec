@@ -4,8 +4,8 @@
 *.dll
 *.so
 *.dylib
-finsec-term
-finsec-web
+/finsec-term
+/finsec-web
 
 # Output / builds
 bin/
