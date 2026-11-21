@@ -70,6 +70,7 @@ const elReaderBody = document.getElementById('reader-body');
 const elReaderOpenLink = document.getElementById('reader-open-link');
 const elReaderMarkRead = document.getElementById('reader-mark-read');
 const elReaderCopyLink = document.getElementById('reader-copy-link');
+const elBtnReaderBack = document.getElementById('btn-reader-back');
 const elToastBox = document.getElementById('toast-box');
 
 // Drawer Elements (Grid View modal)
@@ -560,6 +561,13 @@ function selectItem(id, paneNum, openDrawerInGrid = true) {
         c.classList.remove('active');
       }
     });
+
+    // Mobile Master-Detail Drilldown
+    if (window.innerWidth <= 768 && openDrawerInGrid) {
+      elViewFocus.classList.add('mobile-detail-open');
+      const readerBody = document.getElementById('reader-body');
+      if (readerBody) readerBody.scrollTop = 0;
+    }
   }
 }
 
@@ -686,6 +694,10 @@ function switchView(targetView) {
   state.currentView = targetView;
   state.topicFilter = 'all';
 
+  if (elViewFocus) {
+    elViewFocus.classList.remove('mobile-detail-open');
+  }
+
   elViewTabs.forEach(t => {
     if (t.getAttribute('data-view') === targetView) {
       t.classList.add('active');
@@ -695,6 +707,14 @@ function switchView(targetView) {
   });
 
   updateUI();
+}
+
+if (elBtnReaderBack) {
+  elBtnReaderBack.addEventListener('click', () => {
+    if (elViewFocus) {
+      elViewFocus.classList.remove('mobile-detail-open');
+    }
+  });
 }
 
 elViewTabs.forEach(tab => {
@@ -897,7 +917,9 @@ window.addEventListener('keydown', e => {
     elSearchInput.focus();
     elSearchInput.select();
   } else if (e.key === 'Escape') {
-    if (state.selectedTag) {
+    if (elViewFocus && elViewFocus.classList.contains('mobile-detail-open')) {
+      elViewFocus.classList.remove('mobile-detail-open');
+    } else if (state.selectedTag) {
       filterByTag('');
     } else {
       closeDrawer();
