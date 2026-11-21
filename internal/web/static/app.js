@@ -73,6 +73,27 @@ const elReaderCopyLink = document.getElementById('reader-copy-link');
 const elBtnReaderBack = document.getElementById('btn-reader-back');
 const elToastBox = document.getElementById('toast-box');
 
+// Mobile UI Elements
+const elBtnMobileSearch = document.getElementById('btn-mobile-search');
+const elBtnMobileMenu = document.getElementById('btn-mobile-menu');
+const elHeaderControls = document.getElementById('header-controls');
+const elBottomNavItems = document.querySelectorAll('.bottom-nav-item');
+const elMBadge1 = document.getElementById('m-badge-1');
+const elMBadge2 = document.getElementById('m-badge-2');
+const elMBadge3 = document.getElementById('m-badge-3');
+
+const elMobileSheet = document.getElementById('mobile-action-sheet');
+const elMobileSheetBackdrop = document.getElementById('mobile-sheet-backdrop');
+const elSheetClose = document.getElementById('sheet-close');
+const elMBtnSort = document.getElementById('m-btn-sort');
+const elMBtnTheme = document.getElementById('m-btn-theme');
+const elMBtnSync = document.getElementById('m-btn-sync');
+const elMBtnMarkAll = document.getElementById('m-btn-mark-all');
+const elMStatTotal = document.getElementById('m-stat-total');
+const elMStatUnread = document.getElementById('m-stat-unread');
+const elMStatCrit = document.getElementById('m-stat-crit');
+const elMClockWib = document.getElementById('m-clock-wib');
+
 // Drawer Elements (Grid View modal)
 const elDrawer = document.getElementById('inspector-drawer');
 const elDrawerBackdrop = document.getElementById('drawer-backdrop');
@@ -98,6 +119,7 @@ function updateClocks() {
   const wibMins = padZero(wibDate.getMinutes());
   const wibSecs = padZero(wibDate.getSeconds());
   elWib.textContent = `WIB ${wibHours}:${wibMins}:${wibSecs}`;
+  if (elMClockWib) elMClockWib.textContent = `${wibHours}:${wibMins}:${wibSecs}`;
 }
 setInterval(updateClocks, 1000);
 updateClocks();
@@ -434,6 +456,15 @@ function updateUI() {
   elUnread.textContent = `${state.stats.unread_count} UNREAD`;
   elCrit.textContent = `${state.stats.crit_count} CRITICAL`;
 
+  // Mobile bottom nav badges & sheet stats
+  if (elMBadge1) elMBadge1.textContent = state.filtered1.length;
+  if (elMBadge2) elMBadge2.textContent = state.filtered2.length;
+  if (elMBadge3) elMBadge3.textContent = state.filtered3.length;
+  if (elMStatTotal) elMStatTotal.textContent = state.stats.total_items;
+  if (elMStatUnread) elMStatUnread.textContent = state.stats.unread_count;
+  if (elMStatCrit) elMStatCrit.textContent = state.stats.crit_count;
+  if (elMBtnSort) elMBtnSort.textContent = state.sortBy === 'latest' ? 'LATEST' : 'PRIORITY';
+
   if (state.stats.is_syncing) {
     elSyncStatus.innerHTML = `<span class="spinner-icon">↻</span> SYNCING...`;
     elBtnSync.disabled = true;
@@ -706,7 +737,78 @@ function switchView(targetView) {
     }
   });
 
+  if (elBottomNavItems) {
+    elBottomNavItems.forEach(b => {
+      if (b.getAttribute('data-view') === targetView) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+  }
+
   updateUI();
+}
+
+// Mobile Bottom Nav Click
+if (elBottomNavItems) {
+  elBottomNavItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view');
+      switchView(view);
+    });
+  });
+}
+
+// Mobile Action Sheet Controls
+function openMobileSheet() {
+  if (elMobileSheet) elMobileSheet.classList.add('open');
+  if (elMobileSheetBackdrop) elMobileSheetBackdrop.classList.add('open');
+}
+
+function closeMobileSheet() {
+  if (elMobileSheet) elMobileSheet.classList.remove('open');
+  if (elMobileSheetBackdrop) elMobileSheetBackdrop.classList.remove('open');
+}
+
+if (elBtnMobileMenu) elBtnMobileMenu.addEventListener('click', openMobileSheet);
+if (elSheetClose) elSheetClose.addEventListener('click', closeMobileSheet);
+if (elMobileSheetBackdrop) elMobileSheetBackdrop.addEventListener('click', closeMobileSheet);
+
+if (elBtnMobileSearch && elHeaderControls) {
+  elBtnMobileSearch.addEventListener('click', () => {
+    elHeaderControls.classList.toggle('mobile-search-open');
+    if (elHeaderControls.classList.contains('mobile-search-open') && elSearchInput) {
+      elSearchInput.focus();
+    }
+  });
+}
+
+if (elMBtnSort) {
+  elMBtnSort.addEventListener('click', () => {
+    elBtnSort.click();
+    elMBtnSort.textContent = state.sortBy === 'latest' ? 'LATEST' : 'PRIORITY';
+  });
+}
+
+if (elMBtnTheme) {
+  elMBtnTheme.addEventListener('click', () => {
+    toggleTheme();
+  });
+}
+
+if (elMBtnSync) {
+  elMBtnSync.addEventListener('click', () => {
+    triggerSync();
+    closeMobileSheet();
+  });
+}
+
+if (elMBtnMarkAll) {
+  elMBtnMarkAll.addEventListener('click', () => {
+    markAllRead();
+    closeMobileSheet();
+  });
 }
 
 if (elBtnReaderBack) {
@@ -989,6 +1091,9 @@ function setTheme(theme) {
   localStorage.setItem('finsec-theme', theme);
   if (elThemeText) {
     elThemeText.textContent = theme.toUpperCase();
+  }
+  if (elMBtnTheme) {
+    elMBtnTheme.textContent = theme.toUpperCase();
   }
 }
 

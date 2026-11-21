@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4.2.0">
+  <link rel="stylesheet" href="style.css?v=4.3.0">
 </head>
 <body>
 
@@ -36,8 +36,18 @@
       <div class="stat-pill live" id="sync-status"><span class="live-pulse"></span>LIVE</div>
     </div>
 
+    <!-- MOBILE QUICK ACTIONS BAR -->
+    <div class="mobile-header-actions">
+      <button class="btn-icon-mobile" id="btn-mobile-search" title="Search Feeds" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </button>
+      <button class="btn-icon-mobile" id="btn-mobile-menu" title="Actions & Settings" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+
     <!-- CONTROLS & COMMANDS -->
-    <div class="header-controls">
+    <div class="header-controls" id="header-controls">
       <div class="search-box">
         <input type="text" id="search-input" placeholder="Search CVE, stack, ticker, keyword..." autocomplete="off" spellcheck="false">
         <span class="search-shortcut">/</span>
@@ -237,6 +247,88 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div class="toast-box" id="toast-box"></div>
 
-  <script src="app.js?v=4.2.0"></script>
+  <!-- MOBILE BOTTOM NAVIGATION (THUMB ZONE) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <button class="bottom-nav-item active" data-view="grid">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span class="nav-label">OVERVIEW</span>
+    </button>
+    <button class="bottom-nav-item" data-view="pane1">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      <span class="nav-label">01 TECH</span>
+      <span class="bottom-badge" id="m-badge-1">0</span>
+    </button>
+    <button class="bottom-nav-item" data-view="pane2">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+      <span class="nav-label">02 GLOBAL</span>
+      <span class="bottom-badge" id="m-badge-2">0</span>
+    </button>
+    <button class="bottom-nav-item" data-view="pane3">
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+      <span class="nav-label">03 INDO</span>
+      <span class="bottom-badge" id="m-badge-3">0</span>
+    </button>
+  </nav>
+
+  <!-- MOBILE ACTION SHEET MODAL -->
+  <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
+  <div class="mobile-action-sheet" id="mobile-action-sheet">
+    <div class="sheet-handle-bar"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">COMMANDS & PREFERENCES</div>
+      <button class="sheet-close" id="sheet-close" aria-label="Close Actions">&times;</button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-action-row">
+        <div class="sheet-action-info">
+          <span class="sheet-action-title">SORT FEEDS</span>
+          <span class="sheet-action-desc">Toggle between Latest and Critical priority</span>
+        </div>
+        <button class="sheet-action-btn" id="m-btn-sort">LATEST</button>
+      </div>
+      <div class="sheet-action-row">
+        <div class="sheet-action-info">
+          <span class="sheet-action-title">DISPLAY THEME</span>
+          <span class="sheet-action-desc">High-contrast Institutional Day or Terminal Night</span>
+        </div>
+        <button class="sheet-action-btn" id="m-btn-theme">DARK</button>
+      </div>
+      <div class="sheet-action-row">
+        <div class="sheet-action-info">
+          <span class="sheet-action-title">SYNC INTEL FEEDS</span>
+          <span class="sheet-action-desc">Fetch live CVEs, RSS wires, and X SSR relays</span>
+        </div>
+        <button class="sheet-action-btn primary" id="m-btn-sync">REFRESH</button>
+      </div>
+      <div class="sheet-action-row">
+        <div class="sheet-action-info">
+          <span class="sheet-action-title">MARK ALL READ</span>
+          <span class="sheet-action-desc">Clear unread counters across all 3 intelligence panes</span>
+        </div>
+        <button class="sheet-action-btn" id="m-btn-mark-all">MARK ALL</button>
+      </div>
+
+      <div class="sheet-stats-section">
+        <div class="sheet-stat-box">
+          <span class="sheet-stat-k">TOTAL</span>
+          <span class="sheet-stat-v" id="m-stat-total">0</span>
+        </div>
+        <div class="sheet-stat-box unread">
+          <span class="sheet-stat-k">UNREAD</span>
+          <span class="sheet-stat-v" id="m-stat-unread">0</span>
+        </div>
+        <div class="sheet-stat-box crit">
+          <span class="sheet-stat-k">CRITICAL</span>
+          <span class="sheet-stat-v" id="m-stat-crit">0</span>
+        </div>
+        <div class="sheet-stat-box">
+          <span class="sheet-stat-k">WIB TIME</span>
+          <span class="sheet-stat-v accent" id="m-clock-wib">00:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=4.3.0"></script>
 </body>
 </html>
