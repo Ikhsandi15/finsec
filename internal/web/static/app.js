@@ -124,12 +124,20 @@ function updateClocks() {
 setInterval(updateClocks, 1000);
 updateClocks();
 
+// Environment detection
+const isStaticHost = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
+
 // 1. REAL LIVE FOREX & CRYPTO QUOTES (FROM GO BACKEND / YAHOO FINANCE & BINANCE)
 async function fetchLiveRates() {
   try {
-    let res = await fetch('/api/rates').catch(() => null);
-    if (!res || !res.ok) {
+    let res = null;
+    if (isStaticHost) {
       res = await fetch('./data/rates.json').catch(() => null);
+    } else {
+      res = await fetch('/api/rates').catch(() => null);
+      if (!res || !res.ok) {
+        res = await fetch('./data/rates.json').catch(() => null);
+      }
     }
     if (res && res.ok) {
       const data = await res.json();
@@ -474,15 +482,19 @@ function updateUI() {
   }
 
   if (state.currentView === 'grid') {
-    elViewGrid.style.display = 'grid';
+    elViewGrid.classList.remove('hidden-view');
+    elViewFocus.classList.add('hidden-view');
+    elViewGrid.style.display = '';
     elViewFocus.style.display = 'none';
 
     renderList(elList1, state.filtered1, 1);
     renderList(elList2, state.filtered2, 2);
     renderList(elList3, state.filtered3, 3);
   } else {
+    elViewGrid.classList.add('hidden-view');
+    elViewFocus.classList.remove('hidden-view');
     elViewGrid.style.display = 'none';
-    elViewFocus.style.display = 'grid';
+    elViewFocus.style.display = '';
     renderFocusMode();
   }
 }
@@ -861,9 +873,14 @@ function markAllLocalRead() {
 // API Calls (with automatic static fallback for GitHub Pages)
 async function fetchFeeds() {
   try {
-    let res = await fetch('/api/feeds').catch(() => null);
-    if (!res || !res.ok) {
+    let res = null;
+    if (isStaticHost) {
       res = await fetch('./data/feeds.json').catch(() => null);
+    } else {
+      res = await fetch('/api/feeds').catch(() => null);
+      if (!res || !res.ok) {
+        res = await fetch('./data/feeds.json').catch(() => null);
+      }
     }
     if (res && res.ok) {
       const data = await res.json();
@@ -973,6 +990,7 @@ if (elTagFilterScroll) {
 
 // SSE Setup
 function setupSSE() {
+  if (isStaticHost) return; // GitHub Pages is static; skip backend SSE stream
   const evtSource = new EventSource('/api/events');
 
   evtSource.addEventListener('initial', e => {
